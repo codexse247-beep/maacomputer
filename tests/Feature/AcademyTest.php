@@ -29,7 +29,7 @@ class AcademyTest extends TestCase
     public function test_public_pages_load(): void
     {
         $this->get('/')->assertOk()->assertSee('গ্রাফিক ডিজাইন')->assertSee('ভর্তি চলছে');
-        foreach (['/notices', '/notices?tag=admission', '/departments', '/admission', '/about', '/instructors', '/gallery', '/gallery?c=lab',
+        foreach (['/notices', '/notices?tag=admission', '/departments', '/admission', '/about', '/instructors', '/gallery', '/gallery?c=lab', '/gallery?c=video',
             '/faq', '/verify', '/privacy', '/contact', '/login', '/forgot-password'] as $url) {
             $this->get($url)->assertOk();
         }
@@ -82,6 +82,30 @@ class AcademyTest extends TestCase
         $staff = User::create(['name' => 'স্টাফ', 'email' => 's@example.com', 'role' => 'staff', 'password' => 'secret-pass']);
         $this->actingAs($staff)->get('/admin/settings')->assertForbidden();
         $this->actingAs($staff)->get('/admin')->assertOk()->assertDontSee('/admin/settings');
+        $this->actingAs($staff)->get('/admin/gallery')->assertForbidden();
+    }
+
+    public function test_gallery_images_and_youtube_videos(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->admin);
+
+        $this->post('/admin/gallery', ['type' => 'image', 'category' => 'lab', 'photos' => [UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg')]])
+            ->assertSessionHasNoErrors();
+        $this->post('/admin/gallery', ['type' => 'video', 'category' => 'event', 'caption' => 'সনদ বিতরণ', 'video_url' => 'https://youtube.com/shorts/dQw4w9WgXcQ?si=x'])
+            ->assertSessionHasNoErrors();
+        $this->post('/admin/gallery', ['type' => 'video', 'category' => 'event', 'video_url' => 'https://example.com/video'])->assertSessionHasErrors('video_url');
+        $this->post('/admin/gallery', ['type' => 'image', 'category' => 'lab'])->assertSessionHasErrors('photos');
+
+        $this->assertSame(3, \App\Models\GalleryPhoto::count());
+        $this->get('/admin/gallery')->assertOk()->assertSee('সনদ বিতরণ');
+        // The video opens in the Lity lightbox via its standard watch link.
+        $this->get('/gallery?c=video')->assertOk()->assertSee('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false)->assertSee('data-lity', false)->assertDontSee('/storage/gallery/');
+        $this->get('/gallery')->assertOk()->assertSee('/storage/gallery/', false);
+
+        $photo = \App\Models\GalleryPhoto::where('type', 'image')->first();
+        $this->delete("/admin/gallery/{$photo->id}")->assertRedirect();
+        Storage::disk('public')->assertMissing($photo->path);
     }
 
     public function test_settings_attendance_results_reports(): void
@@ -148,7 +172,7 @@ class AcademyTest extends TestCase
             "/admin/students/{$student->id}/form", '/admin/payments', "/admin/payments/{$payment->id}/receipt", '/admin/notices',
             '/admin/payments?fee=due&department='.$batch->department_id, '/admin/batches', '/admin/batches?status=running', '/admin/results',
             '/admin/teachers', '/admin/teachers?edit=1', '/admin/enquiries', '/admin/enquiries?status=all&type=contact', '/admin/reports',
-            '/admin/reports?period=last_month&department='.$batch->department_id, '/admin/settings', '/admin/notices?edit=1',
+            '/admin/reports?period=last_month&department='.$batch->department_id, '/admin/settings', '/admin/notices?edit=1', '/admin/gallery',
         ] as $url) {
             $this->actingAs($this->admin)->get($url)->assertOk();
         }

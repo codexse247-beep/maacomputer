@@ -57,6 +57,7 @@
             <a class="{{ $nav('admin.notices.*') }}" href="{{ route('admin.notices.index') }}">@include('partials.icon', ['n' => 'bell'])নোটিশ</a>
             <a class="{{ $nav('admin.reports.*') }}" href="{{ route('admin.reports.index') }}">@include('partials.icon', ['n' => 'chart'])রিপোর্ট</a>
             @can('admin')
+                <a class="{{ $nav('admin.gallery.*') }}" href="{{ route('admin.gallery.index') }}">@include('partials.icon', ['n' => 'image'])গ্যালারি</a>
                 <a class="{{ $nav('admin.settings.*') }}" href="{{ route('admin.settings.index') }}">@include('partials.icon', ['n' => 'sliders'])সেটিংস</a>
             @endcan
             <a class="nv" href="{{ route('home') }}" target="_blank">@include('partials.icon', ['n' => 'monitor'])ওয়েবসাইট দেখুন</a>

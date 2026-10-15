@@ -85,10 +85,15 @@ class HomeController extends Controller
 
     public function gallery(Request $request)
     {
-        $category = array_key_exists((string) $request->query('c'), GalleryPhoto::CATEGORIES) ? $request->query('c') : null;
+        // ?c= is a category, or "video" for YouTube videos only.
+        $c = (string) $request->query('c');
+        $category = array_key_exists($c, GalleryPhoto::CATEGORIES) || $c === 'video' ? $c : null;
 
         return view('site.gallery', [
-            'photos' => GalleryPhoto::when($category, fn ($q) => $q->where('category', $category))->latest()->get(),
+            'items' => GalleryPhoto::query()
+                ->when($category === 'video', fn ($q) => $q->where('type', 'video'))
+                ->when($category && $category !== 'video', fn ($q) => $q->where('category', $category))
+                ->latest('id')->get(),
             'category' => $category,
         ]);
     }

@@ -130,25 +130,6 @@
     </form>
 </section>
 
-<section id="gallery" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
-    <h2 style="margin:0;font-size:20px;color:#0E3A05">গ্যালারি (ওয়েবসাইট)</h2>
-    <form method="POST" action="{{ route('admin.settings.gallery.store') }}" enctype="multipart/form-data" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end">
-        @csrf
-        <div style="flex:1 1 220px">@include('admin.partials.upload', ['name' => 'photos[]', 'label' => 'ছবি (একসাথে কয়েকটি বাছতে পারেন)', 'btn' => 'ছবি বাছুন', 'accept' => 'image/*', 'multiple' => true, 'id' => 'g_photos'])</div>
-        <div style="flex:1 1 180px">@include('admin.partials.select', ['name' => 'category', 'label' => 'ধরন', 'value' => 'lab', 'options' => \App\Models\GalleryPhoto::CATEGORIES, 'id' => 'g_cat'])</div>
-        <div style="flex:1 1 220px">@include('admin.partials.field', ['name' => 'caption', 'label' => 'ক্যাপশন (ঐচ্ছিক)', 'value' => '', 'id' => 'g_cap'])</div>
-        <button class="btn p">আপলোড</button>
-    </form>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
-        @foreach ($photos as $p)
-            <figure style="margin:0;display:flex;flex-direction:column;gap:4px">
-                <img src="{{ $p->url() }}" alt="{{ $p->caption }}" loading="lazy" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px">
-                <figcaption class="mute" style="font-size:13px">{{ \App\Models\GalleryPhoto::CATEGORIES[$p->category] ?? '' }}{{ $p->caption ? ' · '.$p->caption : '' }}</figcaption>
-                <form method="POST" action="{{ route('admin.settings.gallery.destroy', $p) }}" onsubmit="return confirm('ছবিটি মুছবেন?')">@csrf @method('DELETE')<button class="el" style="color:#B00E28;height:32px;padding:0">মুছুন</button></form>
-            </figure>
-        @endforeach
-    </div>
-</section>
 @endsection
 
 @push('scripts')

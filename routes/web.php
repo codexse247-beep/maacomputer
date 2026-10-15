@@ -92,8 +92,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('settings/users/{user}', [Admin\SettingController::class, 'destroyUser'])->name('settings.users.destroy');
             Route::post('settings/faqs', [Admin\SettingController::class, 'storeFaq'])->name('settings.faqs.store');
             Route::delete('settings/faqs/{faq}', [Admin\SettingController::class, 'destroyFaq'])->name('settings.faqs.destroy');
-            Route::post('settings/gallery', [Admin\SettingController::class, 'storePhoto'])->name('settings.gallery.store');
-            Route::delete('settings/gallery/{photo}', [Admin\SettingController::class, 'destroyPhoto'])->name('settings.gallery.destroy');
+
+            Route::get('gallery', [Admin\GalleryController::class, 'index'])->name('gallery.index');
+            Route::post('gallery', [Admin\GalleryController::class, 'store'])->name('gallery.store');
+            Route::delete('gallery/{item}', [Admin\GalleryController::class, 'destroy'])->name('gallery.destroy');
         });
 
         Route::get('students', [Admin\StudentController::class, 'index'])->name('students.index');

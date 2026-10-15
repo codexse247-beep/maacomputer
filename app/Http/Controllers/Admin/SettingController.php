@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Faq;
-use App\Models\GalleryPhoto;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +20,6 @@ class SettingController extends Controller
             'departments' => Department::orderBy('sort')->get(),
             'users' => User::orderBy('name')->get(),
             'faqs' => Faq::orderBy('sort')->orderBy('id')->get(),
-            'photos' => GalleryPhoto::latest()->get(),
         ]);
     }
 
@@ -112,29 +109,5 @@ class SettingController extends Controller
         $faq->delete();
 
         return redirect(route('admin.settings.index').'#faq')->with('ok', 'প্রশ্নোত্তর মুছে ফেলা হয়েছে।');
-    }
-
-    public function storePhoto(Request $request)
-    {
-        $data = $request->validate([
-            'photos' => ['required', 'array', 'max:20'],
-            'photos.*' => ['image', 'max:4096'],
-            'caption' => ['nullable', 'string', 'max:255'],
-            'category' => ['required', Rule::in(array_keys(GalleryPhoto::CATEGORIES))],
-        ], [], ['photos' => 'ছবি', 'photos.*' => 'ছবি']);
-
-        foreach ($request->file('photos') as $file) {
-            GalleryPhoto::create(['path' => $file->store('gallery', 'public'), 'caption' => $data['caption'] ?? null, 'category' => $data['category']]);
-        }
-
-        return redirect(route('admin.settings.index').'#gallery')->with('ok', bn(count($request->file('photos'))).'টি ছবি যোগ হয়েছে।');
-    }
-
-    public function destroyPhoto(GalleryPhoto $photo)
-    {
-        Storage::disk('public')->delete($photo->path);
-        $photo->delete();
-
-        return redirect(route('admin.settings.index').'#gallery')->with('ok', 'ছবি মুছে ফেলা হয়েছে।');
     }
 }

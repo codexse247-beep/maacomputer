@@ -1,0 +1,47 @@
+<?php
+
+return [
+    'after_or_equal' => ':attribute অবশ্যই :date এর সমান বা পরের তারিখ হতে হবে।',
+    'alpha_num' => ':attribute এ শুধু ইংরেজি অক্ষর ও সংখ্যা দিন।',
+    'array' => ':attribute সঠিক নয়।',
+    'before' => ':attribute অবশ্যই আজকের আগের তারিখ হতে হবে।',
+    'before_or_equal' => ':attribute ভবিষ্যতের তারিখ হতে পারবে না।',
+    'confirmed' => ':attribute দুইবার একই দিন।',
+    'date' => ':attribute সঠিক তারিখ নয়।',
+    'email' => ':attribute সঠিক ইমেইল ঠিকানা নয়।',
+    'exists' => 'নির্বাচিত :attribute পাওয়া যায়নি।',
+    'file' => ':attribute একটি ফাইল হতে হবে।',
+    'image' => ':attribute একটি ছবি হতে হবে।',
+    'in' => 'নির্বাচিত :attribute সঠিক নয়।',
+    'integer' => ':attribute এ শুধু সংখ্যা দিন।',
+    'max' => [
+        'numeric' => ':attribute :max এর বেশি হতে পারবে না।',
+        'file' => ':attribute :max কিলোবাইটের বেশি হতে পারবে না।',
+        'string' => ':attribute :max অক্ষরের বেশি হতে পারবে না।',
+        'array' => ':attribute এ :max টির বেশি থাকতে পারবে না।',
+    ],
+    'mimes' => ':attribute এর ধরন হতে হবে: :values।',
+    'min' => [
+        'numeric' => ':attribute কমপক্ষে :min হতে হবে।',
+        'file' => ':attribute কমপক্ষে :min কিলোবাইট হতে হবে।',
+        'string' => ':attribute কমপক্ষে :min অক্ষরের হতে হবে।',
+        'array' => ':attribute এ কমপক্ষে :min টি থাকতে হবে।',
+    ],
+    'numeric' => ':attribute এ শুধু সংখ্যা দিন।',
+    'regex' => ':attribute এর ধরন সঠিক নয়।',
+    'required' => ':attribute ঘরটি পূরণ করুন।',
+    'string' => ':attribute সঠিক নয়।',
+    'unique' => 'এই :attribute আগে থেকেই আছে।',
+    'uploaded' => ':attribute আপলোড হয়নি।',
+
+    'attributes' => [
+        'status' => 'অবস্থা',
+        'course_fee' => 'কোর্স ফি',
+        'admission_fee' => 'ভর্তি ফি',
+        'next_installment_date' => 'পরবর্তী কিস্তির তারিখ',
+        'next_installment_amount' => 'পরবর্তী কিস্তির পরিমাণ',
+        'held_on' => 'তারিখ',
+        'body' => 'বিবরণ',
+        'batch_id' => 'ব্যাচ',
+    ],
+];

@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=5">
+@stack('head')
 </head>
 <body class="site" style="background:#F5F7F3;font-size:16px">
 @php
@@ -29,6 +30,7 @@
     <nav class="site-nav" aria-label="পোর্টাল মেনু" style="display:flex;flex-wrap:wrap;gap:4px">
         <a class="nl {{ $dash ? 'on' : '' }}" href="{{ $link('top') }}">ড্যাশবোর্ড</a>
         <a class="nl" href="{{ $link('course') }}">আমার কোর্স</a>
+        <a class="nl {{ request()->routeIs('portal.videos') ? 'on' : '' }}" href="{{ route('portal.videos') }}">ক্লাস ভিডিও</a>
         <a class="nl" href="{{ $link('fees') }}">ফি ও রসিদ</a>
         <a class="nl" href="{{ $link('results') }}">ফলাফল</a>
         <a class="nl" href="{{ $link('notices') }}">নোটিশ</a>
@@ -49,5 +51,6 @@
     @yield('content')
 </main>
 <script src="{{ asset('js/password-toggle.js') }}?v=1" defer></script>
+@stack('scripts')
 </body>
 </html>

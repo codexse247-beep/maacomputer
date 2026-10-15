@@ -38,6 +38,10 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::get('profile', [Portal\DashboardController::class, 'profile'])->name('profile');
         Route::get('id-card', [Portal\DashboardController::class, 'idCard'])->name('id-card');
         Route::get('receipts/{payment}', [Portal\DashboardController::class, 'receipt'])->name('receipt');
+        Route::get('videos', [Portal\VideoController::class, 'index'])->name('videos');
+        Route::get('videos/{video}/file', [Portal\VideoController::class, 'file'])->name('videos.file');
+        Route::post('videos/{video}/watched', [Portal\VideoController::class, 'watched'])->name('videos.watched');
+        Route::get('course-files/{file}', [Portal\VideoController::class, 'download'])->name('course-files.download');
         Route::post('password', [Portal\AuthController::class, 'password'])->name('password');
         Route::post('logout', [Portal\AuthController::class, 'logout'])->name('logout');
     });
@@ -119,6 +123,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('students/{student}/payments', [Admin\PaymentController::class, 'store'])->name('payments.store');
         Route::get('payments/{payment}/receipt', [Admin\PrintController::class, 'receipt'])->name('payments.receipt');
         Route::delete('payments/{payment}', [Admin\PaymentController::class, 'destroy'])->name('payments.destroy');
+
+        Route::get('course-videos', [Admin\CourseVideoController::class, 'index'])->name('course-videos.index');
+        Route::post('course-videos', [Admin\CourseVideoController::class, 'store'])->name('course-videos.store');
+        Route::put('course-videos/{video}', [Admin\CourseVideoController::class, 'update'])->name('course-videos.update');
+        Route::get('course-videos/{video}/file', [Admin\CourseVideoController::class, 'file'])->name('course-videos.file');
+        Route::get('course-files/{file}', [Admin\CourseVideoController::class, 'download'])->name('course-files.download');
+        Route::delete('course-files/{file}', [Admin\CourseVideoController::class, 'destroyFile'])->name('course-files.destroy');
+        Route::delete('course-videos/{video}', [Admin\CourseVideoController::class, 'destroy'])->name('course-videos.destroy');
 
         Route::get('notices', [Admin\NoticeController::class, 'index'])->name('notices.index');
         Route::post('notices', [Admin\NoticeController::class, 'store'])->name('notices.store');

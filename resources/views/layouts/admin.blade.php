@@ -43,6 +43,7 @@
             <a class="{{ $nav('admin.departments.show', 'admin.batches.*') }}" href="{{ route('admin.batches.all') }}">@include('partials.icon', ['n' => 'calendar'])ব্যাচ</a>
             <a class="{{ $nav('admin.students.index', 'admin.students.show', 'admin.students.edit') }}" href="{{ route('admin.students.index') }}">@include('partials.icon', ['n' => 'users'])স্টুডেন্ট</a>
             <a class="{{ $nav('admin.teachers.*') }}" href="{{ route('admin.teachers.index') }}">@include('partials.icon', ['n' => 'user'])শিক্ষক</a>
+            <a class="{{ $nav('admin.course-videos.*') }}" href="{{ route('admin.course-videos.index') }}">@include('partials.icon', ['n' => 'video'])কোর্স ভিডিও</a>
         </div>
         <div class="navgrp">
             <div class="ng">ভর্তি ও ফি</div>

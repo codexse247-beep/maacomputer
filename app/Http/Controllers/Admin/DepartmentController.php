@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CourseVideo;
 use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -53,7 +54,10 @@ class DepartmentController extends Controller
         if ($department->batches()->exists()) {
             return back()->withErrors(['department' => 'এই বিভাগে ব্যাচ আছে। আগে ব্যাচগুলো মুছুন বা সরান।']);
         }
+        // The rows of its classes go with the FK cascade; their stored videos and notes must go too.
+        $videos = CourseVideo::with('files')->where('department_id', $department->id)->get();
         $department->delete();
+        $videos->each->deleteStoredFiles();
 
         return redirect()->route('admin.departments.index')->with('ok', 'বিভাগ মুছে ফেলা হয়েছে।');
     }

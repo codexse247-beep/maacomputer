@@ -172,7 +172,7 @@ class AcademyTest extends TestCase
             "/admin/students/{$student->id}/form", '/admin/payments', "/admin/payments/{$payment->id}/receipt", '/admin/notices',
             '/admin/payments?fee=due&department='.$batch->department_id, '/admin/batches', '/admin/batches?status=running', '/admin/results',
             '/admin/teachers', '/admin/teachers?edit=1', '/admin/enquiries', '/admin/enquiries?status=all&type=contact', '/admin/reports',
-            '/admin/reports?period=last_month&department='.$batch->department_id, '/admin/settings', '/admin/notices?edit=1', '/admin/gallery',
+            '/admin/reports?period=last_month&department='.$batch->department_id, '/admin/settings', '/admin/notices?edit=1', '/admin/gallery', '/admin/course-videos',
         ] as $url) {
             $this->actingAs($this->admin)->get($url)->assertOk();
         }
@@ -212,6 +212,123 @@ class AcademyTest extends TestCase
         // The generated portal password works (checked on a fresh, admin-free app below)
         preg_match('/পাসওয়ার্ড <b>(\d+)<\/b>/u', session('ok'), $m);
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check($m[1], $student->password));
+    }
+
+    public function test_course_videos_only_for_enrolled_students(): void
+    {
+        Storage::fake('local');
+        $student = Student::where('name_en', 'Tanvir Ahmed')->firstOrFail();
+        $own = $student->batch->department_id;
+        $otherDept = \App\Models\Department::where('id', '!=', $own)->value('id');
+
+        $this->actingAs($this->admin);
+        $this->post('/admin/course-videos', ['department_id' => $own, 'class_no' => '১', 'title' => 'ফটোশপ পরিচিতি', 'type' => 'upload',
+            'video' => UploadedFile::fake()->create('class1.mp4', 2048, 'video/mp4')])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $own, 'class_no' => 2, 'title' => 'লেয়ার', 'type' => 'url', 'url' => 'https://youtu.be/dQw4w9WgXcQ'])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $otherDept, 'title' => 'অন্য কোর্সের ভিডিও', 'type' => 'url', 'url' => 'https://drive.google.com/file/d/abc123/view?usp=sharing'])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $own, 'title' => 'ভুল ফাইল', 'type' => 'upload', 'video' => UploadedFile::fake()->create('a.exe', 10, 'application/x-msdownload')])->assertSessionHasErrors('video');
+        $this->post('/admin/course-videos', ['department_id' => $own, 'title' => 'লিংক নেই', 'type' => 'url'])->assertSessionHasErrors('url');
+
+        $upload = \App\Models\CourseVideo::where('type', 'upload')->first();
+        $this->assertSame(1, $upload->class_no);
+        Storage::disk('local')->assertExists($upload->path);
+        $this->get("/admin/course-videos?course=$own")->assertOk()->assertSee('ফটোশপ পরিচিতি');
+        $this->get("/admin/course-videos/{$upload->id}/file")->assertOk();
+        $this->get("/admin/course-videos?course=$otherDept")->assertSee('https://drive.google.com/file/d/abc123/preview', false);
+        auth()->guard('web')->logout();
+
+        // Guests and other courses' students get nothing; the file never sits in the public folder.
+        $this->get("/portal/videos/{$upload->id}/file")->assertRedirect('/login');
+        $otherBatch = Batch::create(['department_id' => $otherDept, 'code' => 'X-1', 'name' => 'অন্য ব্যাচ']);
+        $outsider = $student->replicate()->fill(['batch_id' => $otherBatch->id, 'student_code' => 'X-1-001', 'status' => 'active']);
+        $outsider->save();
+        $this->actingAs($outsider, 'student')->get('/portal/videos')->assertOk()->assertDontSee('ফটোশপ পরিচিতি')->assertSee('অন্য কোর্সের ভিডিও');
+        $this->get("/portal/videos/{$upload->id}/file")->assertNotFound();
+
+        $this->actingAs($student, 'student')->get('/portal/videos')->assertOk()->assertSee('ফটোশপ পরিচিতি')->assertSee('ক্লাস ১')
+            ->assertSee('https://www.youtube.com/watch?v=dQw4w9WgXcQ', false)->assertDontSee('অন্য কোর্সের ভিডিও');
+        $this->get("/portal/videos/{$upload->id}/file")->assertOk();
+
+        // On the live server Caddy sends the file; PHP only answers with the header.
+        config(['app.video_sendfile' => true]);
+        $this->get("/portal/videos/{$upload->id}/file")->assertOk()->assertHeader('X-Accel-Redirect', '/'.$upload->path);
+
+        $student->update(['status' => 'dropped']);
+        $this->get('/portal/videos')->assertOk()->assertDontSee('ফটোশপ পরিচিতি');
+        $this->get("/portal/videos/{$upload->id}/file")->assertNotFound();
+
+        $this->actingAs($this->admin, 'web')->delete("/admin/course-videos/{$upload->id}")->assertRedirect();
+        $this->assertNull(\App\Models\CourseVideo::find($upload->id));
+        Storage::disk('local')->assertMissing($upload->path);
+    }
+
+    public function test_course_notes_locks_progress_and_editing(): void
+    {
+        Storage::fake('local');
+        $student = Student::where('name_en', 'Tanvir Ahmed')->firstOrFail();
+        $dep = $student->batch->department_id;
+        $otherBatch = Batch::create(['department_id' => $dep, 'code' => 'Y-1', 'name' => 'আরেক ব্যাচ']);
+        $this->actingAs($this->admin, 'web');
+
+        // Class with a note file; one for another batch; one released later; one for fully-paid students only.
+        $this->post('/admin/course-videos', ['department_id' => $dep, 'class_no' => 1, 'title' => 'ক্লাস এক', 'description' => 'বাড়ির কাজ: লোগো', 'type' => 'url',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ', 'files' => [UploadedFile::fake()->create('note.pdf', 100, 'application/pdf')]])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $dep, 'batch_id' => $otherBatch->id, 'title' => 'অন্য ব্যাচের ক্লাস', 'type' => 'url', 'url' => 'https://youtu.be/aaaaaaaaaaa'])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $dep, 'class_no' => 3, 'title' => 'পরের সপ্তাহের ক্লাস', 'type' => 'url', 'url' => 'https://youtu.be/bbbbbbbbbbb',
+            'release_on' => now()->addWeek()->toDateString(), 'files' => [UploadedFile::fake()->create('later.pdf', 10, 'application/pdf')]])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $dep, 'class_no' => 4, 'title' => 'ফি পরিশোধিতদের ক্লাস', 'type' => 'url', 'url' => 'https://youtu.be/ccccccccccc', 'paid_only' => '1'])->assertSessionHasNoErrors();
+        $this->post('/admin/course-videos', ['department_id' => $dep, 'title' => 'খারাপ ফাইল', 'type' => 'url', 'url' => 'https://youtu.be/ddddddddddd',
+            'files' => [UploadedFile::fake()->create('virus.exe', 10)]])->assertSessionHasErrors('files.0');
+        $this->post('/admin/course-videos', ['department_id' => $dep, 'batch_id' => Batch::where('department_id', '!=', $dep)->value('id') ?? 999999, 'title' => 'ভুল ব্যাচ', 'type' => 'url', 'url' => 'https://youtu.be/eeeeeeeeeee'])
+            ->assertSessionHasErrors('batch_id');
+
+        $first = \App\Models\CourseVideo::where('title', 'ক্লাস এক')->first();
+        $later = \App\Models\CourseVideo::where('title', 'পরের সপ্তাহের ক্লাস')->first();
+        $paidOnly = \App\Models\CourseVideo::where('title', 'ফি পরিশোধিতদের ক্লাস')->first();
+        $note = $first->files()->first();
+        $this->assertSame('note.pdf', $note->name);
+        $this->get("/admin/course-files/{$note->id}")->assertOk()->assertDownload('note.pdf');
+        $this->get("/admin/course-videos?edit={$first->id}")->assertOk()->assertSee('ক্লাস সম্পাদনা')->assertSee('note.pdf');
+
+        // Edit: rename and move to class 2, switch to an uploaded video, keep the note.
+        $this->put("/admin/course-videos/{$first->id}", ['department_id' => $dep, 'class_no' => '২', 'title' => 'ক্লাস দুই', 'type' => 'upload',
+            'video' => UploadedFile::fake()->create('c.mp4', 500, 'video/mp4')])->assertSessionHasNoErrors();
+        $first->refresh();
+        $this->assertSame([2, 'ক্লাস দুই', 'upload', null], [$first->class_no, $first->title, $first->type, $first->url]);
+        Storage::disk('local')->assertExists($first->path);
+        $this->put("/admin/course-videos/{$first->id}", ['department_id' => $dep, 'class_no' => 2, 'title' => 'ক্লাস দুই', 'type' => 'upload'])->assertSessionHasNoErrors(); // keeps the old file
+        $this->assertNotNull($first->fresh()->path);
+        auth()->guard('web')->logout();
+
+        // Student (has fees due in the demo data): sees own batch's classes, locked ones show why.
+        $this->assertGreaterThan(0, $student->totalDue());
+        $this->actingAs($student, 'student')->get('/portal/videos')->assertOk()
+            ->assertSee('ক্লাস দুই')->assertSee('বাড়ির কাজ: লোগো')->assertSee('note.pdf')
+            ->assertDontSee('অন্য ব্যাচের ক্লাস')
+            ->assertSee('পরের সপ্তাহের ক্লাস')->assertSee('থেকে দেখা যাবে')->assertDontSee('later.pdf')
+            ->assertSee('বকেয়া ফি পরিশোধ করলে দেখা যাবে')
+            ->assertSee('id="doneCount">০</span>/১ ক্লাস দেখা হয়েছে', false);
+        $this->get("/portal/course-files/{$note->id}")->assertOk()->assertDownload('note.pdf');
+        $this->get('/portal/course-files/'.$later->files()->first()->id)->assertNotFound();
+        $this->post("/portal/videos/{$later->id}/watched", ['watched' => 1])->assertNotFound();
+        $this->post("/portal/videos/{$paidOnly->id}/watched", ['watched' => 1])->assertNotFound();
+
+        // Watched progress
+        $this->postJson("/portal/videos/{$first->id}/watched", ['watched' => 1])->assertOk();
+        $this->get('/portal/videos')->assertSee('id="doneCount">১</span>/১ ক্লাস দেখা হয়েছে', false);
+        $this->actingAs($this->admin, 'web')->get("/admin/course-videos?course=$dep")->assertSee('দেখেছে ১/')->assertSee('✓ '.$student->name_bn);
+        $this->actingAs($student, 'student')->postJson("/portal/videos/{$first->id}/watched", ['watched' => 0])->assertOk();
+        $this->assertSame(0, $student->watchedVideos()->count());
+
+        // Paying the fees and the release date passing open the locked classes.
+        $student->payments()->create(['amount' => $student->totalDue(), 'paid_on' => now(), 'item' => 'কোর্স ফি', 'method' => 'cash', 'receipt_no' => 'T-1']);
+        $this->travel(8)->days();
+        $this->get('/portal/videos')->assertDontSee('বকেয়া ফি পরিশোধ করলে')->assertDontSee('থেকে দেখা যাবে')->assertSee('later.pdf');
+
+        // Deleting a class removes its stored files too.
+        $this->actingAs($this->admin, 'web')->delete("/admin/course-videos/{$first->id}")->assertRedirect();
+        Storage::disk('local')->assertMissing([$first->path, $note->path]);
+        $this->assertSame(0, \App\Models\CourseFile::where('course_video_id', $first->id)->count());
     }
 
     public function test_student_portal(): void

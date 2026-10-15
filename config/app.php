@@ -28,6 +28,9 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    // Let Caddy stream uploaded class videos (X-Accel-Redirect) instead of PHP. Only on the live server.
+    'video_sendfile' => (bool) env('VIDEO_SENDFILE', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode

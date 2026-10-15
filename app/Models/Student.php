@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -64,6 +65,12 @@ class Student extends Authenticatable
     public function notes(): HasMany
     {
         return $this->hasMany(StudentNote::class)->latest();
+    }
+
+    /** Class videos this student has marked (or played) as watched. */
+    public function watchedVideos(): BelongsToMany
+    {
+        return $this->belongsToMany(CourseVideo::class, 'video_views')->withTimestamps();
     }
 
     public function admittedBy(): BelongsTo

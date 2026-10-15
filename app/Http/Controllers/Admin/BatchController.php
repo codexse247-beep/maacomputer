@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Batch;
+use App\Models\CourseVideo;
 use App\Models\Department;
 use App\Models\Student;
 use Illuminate\Http\Request;
@@ -105,6 +106,10 @@ class BatchController extends Controller
     {
         if ($batch->students()->exists()) {
             return back()->withErrors(['batch' => 'এই ব্যাচে স্টুডেন্ট আছে, তাই মোছা যাবে না। ব্যাচটি "সমাপ্ত" করে রাখুন।']);
+        }
+        // Deleting the batch would null batch_id and open its batch-only classes to every batch of the course.
+        if (CourseVideo::where('batch_id', $batch->id)->exists()) {
+            return back()->withErrors(['batch' => 'এই ব্যাচের জন্য আলাদা ক্লাস ভিডিও আছে। আগে কোর্স ভিডিও পাতায় সেগুলো মুছুন বা অন্য ব্যাচে দিন।']);
         }
         $department = $batch->department;
         $batch->delete();

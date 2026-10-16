@@ -15,18 +15,18 @@ class AuthController extends Controller
         $data = $request->validate([
             'student_code' => ['required', 'string'],
             'password' => ['required', 'string'],
-        ], [], ['student_code' => 'স্টুডেন্ট আইডি', 'password' => 'পাসওয়ার্ড']);
+        ], [], ['student_code' => __('স্টুডেন্ট আইডি'), 'password' => __('পাসওয়ার্ড')]);
 
         $credentials = ['student_code' => strtoupper(trim($data['student_code'])), 'password' => $data['password']];
 
         if (! Auth::guard('student')->attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['student_code' => 'স্টুডেন্ট আইডি বা পাসওয়ার্ড সঠিক নয়।'])->onlyInput('student_code');
+            return back()->withErrors(['student_code' => __('স্টুডেন্ট আইডি বা পাসওয়ার্ড সঠিক নয়।')])->onlyInput('student_code');
         }
 
         if (Auth::guard('student')->user()->status === 'dropped') {
             Auth::guard('student')->logout();
 
-            return back()->withErrors(['student_code' => 'এই অ্যাকাউন্টটি সক্রিয় নয়। অফিসে যোগাযোগ করুন।']);
+            return back()->withErrors(['student_code' => __('এই অ্যাকাউন্টটি সক্রিয় নয়। অফিসে যোগাযোগ করুন।')]);
         }
 
         $request->session()->regenerate();

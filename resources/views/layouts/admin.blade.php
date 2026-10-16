@@ -16,7 +16,8 @@
 @php
     $nav = fn (string ...$patterns) => request()->routeIs(...$patterns) ? 'nv on' : 'nv';
     $admin = auth()->user();
-    $newEnquiries = \App\Models\Enquiry::where('status', 'new')->count();
+    $newEnquiries = $admin->canAccess('admissions') ? \App\Models\Enquiry::where('status', 'new')->count() : 0;
+    $pendingOnline = $admin->canAccess('fees') ? \App\Models\OnlinePayment::where('status', 'pending')->count() : 0;
 @endphp
 <div class="shell" id="shell">
 <div class="mbar noprint">
@@ -39,26 +40,46 @@
         </div>
         <div class="navgrp">
             <div class="ng">একাডেমিক</div>
-            <a class="{{ $nav('admin.departments.index', 'admin.departments.create', 'admin.departments.edit') }}" href="{{ route('admin.departments.index') }}">@include('partials.icon', ['n' => 'layers'])বিভাগ</a>
-            <a class="{{ $nav('admin.departments.show', 'admin.batches.*') }}" href="{{ route('admin.batches.all') }}">@include('partials.icon', ['n' => 'calendar'])ব্যাচ</a>
-            <a class="{{ $nav('admin.students.index', 'admin.students.show', 'admin.students.edit') }}" href="{{ route('admin.students.index') }}">@include('partials.icon', ['n' => 'users'])স্টুডেন্ট</a>
-            <a class="{{ $nav('admin.teachers.*') }}" href="{{ route('admin.teachers.index') }}">@include('partials.icon', ['n' => 'user'])শিক্ষক</a>
-            <a class="{{ $nav('admin.course-videos.*') }}" href="{{ route('admin.course-videos.index') }}">@include('partials.icon', ['n' => 'video'])কোর্স ভিডিও</a>
+            @can('area', 'academics')<a class="{{ $nav('admin.departments.index', 'admin.departments.create', 'admin.departments.edit') }}" href="{{ route('admin.departments.index') }}">@include('partials.icon', ['n' => 'layers'])বিভাগ</a>@endcan
+            @can('area', 'students')
+                <a class="{{ $nav('admin.departments.show', 'admin.batches.*') }}" href="{{ route('admin.batches.all') }}">@include('partials.icon', ['n' => 'calendar'])ব্যাচ</a>
+                <a class="{{ $nav('admin.students.index', 'admin.students.show', 'admin.students.edit') }}" href="{{ route('admin.students.index') }}">@include('partials.icon', ['n' => 'users'])স্টুডেন্ট</a>
+            @endcan
+            @can('area', 'academics')<a class="{{ $nav('admin.teachers.*') }}" href="{{ route('admin.teachers.index') }}">@include('partials.icon', ['n' => 'user'])শিক্ষক</a>@endcan
         </div>
+        @can('area', 'classes')
         <div class="navgrp">
-            <div class="ng">ভর্তি ও ফি</div>
-            <a class="{{ $nav('admin.students.create') }}" href="{{ route('admin.students.create') }}">@include('partials.icon', ['n' => 'user-plus'])নতুন ভর্তি</a>
-            <a class="{{ $nav('admin.enquiries.*') }}" href="{{ route('admin.enquiries.index') }}">@include('partials.icon', ['n' => 'mail'])অনলাইন আবেদন @if ($newEnquiries)<span class="badge b-r" style="margin-left:auto;height:24px;padding:0 9px">{{ bn($newEnquiries) }}</span>@endif</a>
-            <a class="{{ $nav('admin.payments.*') }}" href="{{ route('admin.payments.index') }}">@include('partials.icon', ['n' => 'cash'])ফি ও পেমেন্ট</a>
+            <div class="ng">ক্লাস</div>
             <a class="{{ $nav('admin.attendance.*') }}" href="{{ route('admin.attendance.index') }}">@include('partials.icon', ['n' => 'check-square'])উপস্থিতি</a>
             <a class="{{ $nav('admin.results.*') }}" href="{{ route('admin.results.index') }}">@include('partials.icon', ['n' => 'file'])ফলাফল</a>
+            <a class="{{ $nav('admin.course-videos.*') }}" href="{{ route('admin.course-videos.index') }}">@include('partials.icon', ['n' => 'video'])কোর্স ভিডিও</a>
+            <a class="{{ $nav('admin.assignments.*', 'admin.quizzes.*') }}" href="{{ route('admin.assignments.index') }}">@include('partials.icon', ['n' => 'edit'])অ্যাসাইনমেন্ট ও কুইজ</a>
+            <a class="{{ $nav('admin.events.*') }}" href="{{ route('admin.events.index') }}">@include('partials.icon', ['n' => 'calendar'])ক্যালেন্ডার</a>
         </div>
+        @endcan
+        @if ($admin->canAccess('admissions') || $admin->canAccess('fees'))
+        <div class="navgrp">
+            <div class="ng">ভর্তি ও ফি</div>
+            @can('area', 'admissions')
+                <a class="{{ $nav('admin.students.create') }}" href="{{ route('admin.students.create') }}">@include('partials.icon', ['n' => 'user-plus'])নতুন ভর্তি</a>
+                <a class="{{ $nav('admin.enquiries.*') }}" href="{{ route('admin.enquiries.index') }}">@include('partials.icon', ['n' => 'mail'])অনলাইন আবেদন @if ($newEnquiries)<span class="badge b-r" style="margin-left:auto;height:24px;padding:0 9px">{{ bn($newEnquiries) }}</span>@endif</a>
+            @endcan
+            @can('area', 'fees')
+                <a class="{{ $nav('admin.payments.index', 'admin.payments.receipt') }}" href="{{ route('admin.payments.index') }}">@include('partials.icon', ['n' => 'cash'])ফি ও পেমেন্ট</a>
+                <a class="{{ $nav('admin.online-payments.*') }}" href="{{ route('admin.online-payments.index') }}">@include('partials.icon', ['n' => 'phone'])অনলাইন পেমেন্ট @if ($pendingOnline)<span class="badge b-r" style="margin-left:auto;height:24px;padding:0 9px">{{ bn($pendingOnline) }}</span>@endif</a>
+                <a class="{{ $nav('admin.dues.*') }}" href="{{ route('admin.dues.index') }}">@include('partials.icon', ['n' => 'clock'])বকেয়া ও রিমাইন্ডার</a>
+                <a class="{{ $nav('admin.expenses.*') }}" href="{{ route('admin.expenses.index') }}">@include('partials.icon', ['n' => 'download'])খরচ</a>
+            @endcan
+        </div>
+        @endif
         <div class="navgrp">
             <div class="ng">আরও</div>
-            <a class="{{ $nav('admin.notices.*') }}" href="{{ route('admin.notices.index') }}">@include('partials.icon', ['n' => 'bell'])নোটিশ</a>
-            <a class="{{ $nav('admin.reports.*') }}" href="{{ route('admin.reports.index') }}">@include('partials.icon', ['n' => 'chart'])রিপোর্ট</a>
+            @can('area', 'notices')<a class="{{ $nav('admin.notices.*') }}" href="{{ route('admin.notices.index') }}">@include('partials.icon', ['n' => 'bell'])নোটিশ</a>@endcan
+            @can('area', 'reports')<a class="{{ $nav('admin.reports.*') }}" href="{{ route('admin.reports.index') }}">@include('partials.icon', ['n' => 'chart'])রিপোর্ট</a>@endcan
             @can('admin')
                 <a class="{{ $nav('admin.gallery.*') }}" href="{{ route('admin.gallery.index') }}">@include('partials.icon', ['n' => 'image'])গ্যালারি</a>
+                <a class="{{ $nav('admin.messages.*') }}" href="{{ route('admin.messages.index') }}">@include('partials.icon', ['n' => 'mail'])ইমেইল</a>
+                <a class="{{ $nav('admin.activity.*') }}" href="{{ route('admin.activity.index') }}">@include('partials.icon', ['n' => 'file'])অ্যাক্টিভিটি লগ</a>
                 <a class="{{ $nav('admin.settings.*') }}" href="{{ route('admin.settings.index') }}">@include('partials.icon', ['n' => 'sliders'])সেটিংস</a>
             @endcan
             <a class="nv" href="{{ route('home') }}" target="_blank">@include('partials.icon', ['n' => 'monitor'])ওয়েবসাইট দেখুন</a>

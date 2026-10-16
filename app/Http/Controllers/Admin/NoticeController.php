@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Department;
 use App\Models\Notice;
+use App\Models\Student;
+use App\Support\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -23,9 +25,10 @@ class NoticeController extends Controller
 
     public function store(Request $request)
     {
-        Notice::create($this->validated($request));
+        $notice = Notice::create($this->validated($request));
+        $sent = $request->boolean('send_email') ? $this->email($notice) : 0;
 
-        return redirect()->route('admin.notices.index')->with('ok', 'নোটিশ প্রকাশ হয়েছে।');
+        return redirect()->route('admin.notices.index')->with('ok', 'নোটিশ প্রকাশ হয়েছে।'.($sent ? ' '.bn($sent).' জন স্টুডেন্টকে ইমেইল করা হয়েছে।' : ''));
     }
 
     public function update(Request $request, Notice $notice)
@@ -40,6 +43,15 @@ class NoticeController extends Controller
         $notice->delete();
 
         return redirect()->route('admin.notices.index')->with('ok', 'নোটিশ মুছে ফেলা হয়েছে।');
+    }
+
+    /** Email the notice to the students it is meant for (those with an email address). */
+    private function email(Notice $notice): int
+    {
+        return Student::with('batch.department')->withSum('payments', 'amount')->whereIn('status', ['active', 'on_leave'])->whereNotNull('email')
+            ->when($notice->batch_id, fn ($q) => $q->where('batch_id', $notice->batch_id))
+            ->when(! $notice->batch_id && $notice->department_id, fn ($q) => $q->whereHas('batch', fn ($b) => $b->where('department_id', $notice->department_id)))
+            ->get()->filter(fn (Student $s) => Notifier::toStudent($s, 'notice', ['title' => $notice->title, 'body' => (string) $notice->body]))->count();
     }
 
     private function validated(Request $request): array

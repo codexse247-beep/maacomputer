@@ -1,11 +1,11 @@
 @extends('layouts.site')
 
-@section('title', 'গোপনীয়তা ও শর্ত')
+@section('title', __('গোপনীয়তা ও শর্ত'))
 
 @php
     // "## Heading" lines start a section; everything else is paragraph text.
     $sections = [];
-    foreach (preg_split('/\r?\n/', setting('privacy')) as $line) {
+    foreach (preg_split('/\r?\n/', setting_t('privacy')) as $line) {
         if (str_starts_with(trim($line), '## ')) {
             $sections[] = ['h' => trim(substr(trim($line), 3)), 'p' => ''];
         } elseif ($sections) {
@@ -17,7 +17,7 @@
 @endphp
 
 @section('content')
-@include('partials.page-hero', ['eyebrow' => 'আইনি', 'title' => 'গোপনীয়তা নীতি ও শর্তাবলি', 'lead' => 'কার্যকর: '.setting('privacy_date')])
+@include('partials.page-hero', ['eyebrow' => __('আইনি'), 'title' => __('গোপনীয়তা নীতি ও শর্তাবলি'), 'lead' => __('কার্যকর: :date', ['date' => setting_t('privacy_date')])])
 
 <section style="padding:56px 0 88px">
 <div class="wrap">

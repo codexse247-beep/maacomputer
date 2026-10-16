@@ -1,6 +1,6 @@
 @extends('layouts.site')
 
-@section('title', 'গ্যালারি')
+@section('title', __('গ্যালারি'))
 
 @push('head')
 <link rel="stylesheet" href="{{ asset('vendor/lity/lity.min.css') }}">
@@ -17,30 +17,30 @@
 @endpush
 
 @section('content')
-@include('partials.page-hero', ['eyebrow' => 'গ্যালারি', 'title' => 'ক্লাস ও অনুষ্ঠানের ছবি ও ভিডিও', 'lead' => 'ল্যাব, ক্লাসরুম, সনদ বিতরণ, স্টুডেন্টদের কাজ ও ভিডিও।'])
+@include('partials.page-hero', ['eyebrow' => __('গ্যালারি'), 'title' => __('ক্লাস ও অনুষ্ঠানের ছবি ও ভিডিও'), 'lead' => __('ল্যাব, ক্লাসরুম, সনদ বিতরণ, স্টুডেন্টদের কাজ ও ভিডিও।')])
 
 <section style="padding:56px 0 88px">
 <div class="wrap">
-    <nav aria-label="গ্যালারির ধরন" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">
-        <a class="tabp {{ ! $category ? 'on' : '' }}" href="{{ route('gallery') }}">সব</a>
+    <nav aria-label="{{ __('গ্যালারির ধরন') }}" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">
+        <a class="tabp {{ ! $category ? 'on' : '' }}" href="{{ route('gallery') }}">{{ __('সব') }}</a>
         @foreach (\App\Models\GalleryPhoto::CATEGORIES as $key => $label)
-            <a class="tabp {{ $category === $key ? 'on' : '' }}" href="{{ route('gallery', ['c' => $key]) }}">{{ $label }}</a>
+            <a class="tabp {{ $category === $key ? 'on' : '' }}" href="{{ route('gallery', ['c' => $key]) }}">{{ __($label) }}</a>
         @endforeach
-        <a class="tabp {{ $category === 'video' ? 'on' : '' }}" href="{{ route('gallery', ['c' => 'video']) }}">ভিডিও</a>
+        <a class="tabp {{ $category === 'video' ? 'on' : '' }}" href="{{ route('gallery', ['c' => 'video']) }}">{{ __('ভিডিও') }}</a>
     </nav>
     <div class="gal">
         @forelse ($items as $item)
-            @php $name = $item->caption ?: ($item->isVideo() ? 'ভিডিও' : 'গ্যালারির ছবি'); @endphp
+            @php $name = $item->caption ?: ($item->isVideo() ? __('ভিডিও') : __('গ্যালারির ছবি')); @endphp
             <figure>
                 {{-- Lity opens both photos and YouTube videos in a popup on this page. --}}
-                <a href="{{ $item->url() }}" data-lity data-lity-desc="{{ $name }}" aria-label="{{ ($item->isVideo() ? 'ভিডিও দেখুন: ' : 'বড় করে দেখুন: ').$name }}">
+                <a href="{{ $item->url() }}" data-lity data-lity-desc="{{ $name }}" aria-label="{{ ($item->isVideo() ? __('ভিডিও দেখুন') : __('বড় করে দেখুন')).': '.$name }}">
                     <img src="{{ $item->thumb() }}" alt="{{ $name }}" loading="lazy">
                     @if ($item->isVideo())<span class="play" aria-hidden="true">@include('partials.icon', ['n' => 'play', 'size' => 30])</span>@endif
                 </a>
                 @if ($item->caption)<figcaption><b>{{ $item->caption }}</b></figcaption>@endif
             </figure>
         @empty
-            @for ($i = 1; $i <= 6; $i++)<div class="phbox" style="aspect-ratio:4/3;border-radius:14px">{{ $category === 'video' ? 'ভিডিও' : 'ছবি' }} শীঘ্রই যোগ হবে</div>@endfor
+            @for ($i = 1; $i <= 6; $i++)<div class="phbox" style="aspect-ratio:4/3;border-radius:14px">{{ $category === 'video' ? __('ভিডিও শীঘ্রই যোগ হবে') : __('ছবি শীঘ্রই যোগ হবে') }}</div>@endfor
         @endforelse
     </div>
 </div>

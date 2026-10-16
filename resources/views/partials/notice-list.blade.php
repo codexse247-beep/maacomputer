@@ -6,9 +6,9 @@
             <span style="font-weight:600;font-size:18px;color:#0E3A05">{{ $n->title }}</span>
             @if ($n->body)<span style="font-size:15px;color:#55635A;white-space:pre-line">{{ $n->body }}</span>@endif
         </span>
-        <span class="badge {{ $n->tagTone() }}" style="font-size:14px">{{ $n->tagLabel() }}</span>
+        <span class="badge {{ $n->tagTone() }}" style="font-size:14px">{{ __($n->tagLabel()) }}</span>
     </div>
     @empty
-    <div style="padding:28px;background:#fff;color:#55635A">এখনো কোনো নোটিশ নেই।</div>
+    <div style="padding:28px;background:#fff;color:#55635A">{{ __('এখনো কোনো নোটিশ নেই।') }}</div>
     @endforelse
 </div>

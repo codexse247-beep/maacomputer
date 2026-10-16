@@ -21,6 +21,7 @@ class ReportController extends Controller
         'results' => ['ফলাফল সারাংশ', 'পরীক্ষা অনুযায়ী গড় ও পাসের হার'],
         'admissions' => ['ভর্তি রিপোর্ট', 'নির্বাচিত সময়ের নতুন ভর্তি'],
         'certificates' => ['সনদ তালিকা', 'সনদপ্রাপ্ত স্টুডেন্ট'],
+        'finance' => ['আয়-ব্যয় (লাভ-ক্ষতি)', 'মাসভিত্তিক ফি আদায়, খরচ ও লাভ'],
     ];
 
     public const PERIODS = ['this_month' => 'এই মাস', 'last_month' => 'গত মাস', '3_months' => 'গত ৩ মাস', 'this_year' => 'এই বছর', 'all' => 'সব সময়'];
@@ -175,6 +176,23 @@ class ReportController extends Controller
         $rows = $students->map(fn (Student $s) => [bn_date($s->admission_date), $s->student_code, $s->name_bn, $s->phone, $s->batch->department->name, $s->batch->code, $s->admission_type, $s->reference ?? '', $s->totalPaid()]);
 
         return [['তারিখ', 'আইডি', 'নাম', 'মোবাইল', 'বিভাগ', 'ব্যাচ', 'ধরন', 'রেফারেন্স', 'পরিশোধিত (৳)'], $rows, ['', 'মোট', bn($students->count()).' জন', '', '', '', '', '', $students->sum(fn ($s) => $s->totalPaid())]];
+    }
+
+    /** Month by month: fees collected, expenses, profit. "All time" shows the last 12 months. */
+    private function buildFinance($from, $to, $department, $batch, $exam): array
+    {
+        $from = ($from ?? now()->subMonthsNoOverflow(11))->copy()->startOfMonth();
+        $to = ($to ?? now())->copy()->endOfMonth();
+        $rows = collect();
+        for ($m = $from->copy(); $m->lte($to); $m->addMonthNoOverflow()) {
+            [$a, $b] = [$m->copy()->startOfMonth()->toDateString(), $m->copy()->endOfMonth()->toDateString()];
+            $income = (int) \App\Models\Payment::whereBetween('paid_on', [$a, $b])
+                ->when($department, fn ($q) => $q->whereHas('student.batch', fn ($x) => $x->where('department_id', $department)))->sum('amount');
+            $spent = (int) \App\Models\Expense::whereBetween('spent_on', [$a, $b])->sum('amount');
+            $rows->push([bn_date($m, false), $income, $spent, $income - $spent]);
+        }
+
+        return [['মাস', 'ফি আদায় (৳)', 'খরচ (৳)', 'লাভ / ক্ষতি (৳)'], $rows, ['মোট', $rows->sum(1), $rows->sum(2), $rows->sum(3)]];
     }
 
     private function buildCertificates($from, $to, $department, $batch, $exam): array

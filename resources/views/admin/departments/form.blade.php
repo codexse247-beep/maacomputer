@@ -33,6 +33,11 @@
         <label for="blurb">ওয়েবসাইটের জন্য সংক্ষিপ্ত বিবরণ</label>
         <textarea id="blurb" name="blurb" class="ta" maxlength="500">{{ old('blurb', $department->blurb) }}</textarea>
     </div>
+    @include('admin.partials.english', ['model' => $department, 'fields' => [
+        'name' => ['Department name', 'text'], 'course_name' => ['Course name', 'text'], 'duration' => ['Duration (e.g. 6 months)', 'text'],
+        'routine_note' => ['Class routine (e.g. 3 days a week)', 'text'], 'topics' => ['Topics (comma separated)', 'text'],
+        'blurb' => ['Short description', 'textarea'], 'learn' => ['What you will learn (one per line)', 'textarea'],
+    ]])
     <div style="padding:16px 24px;border-top:1px solid #DFE5DB;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px">
         <div class="row">
             <a class="btn" href="{{ $editing ? route('admin.departments.show', $department) : route('admin.departments.index') }}">বাতিল</a>

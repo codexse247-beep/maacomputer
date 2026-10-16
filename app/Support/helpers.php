@@ -4,9 +4,13 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 if (! function_exists('bn')) {
-    /** Convert ASCII digits to Bangla digits. */
+    /** Convert ASCII digits to Bangla digits (left as they are on the English website). */
     function bn($value): string
     {
+        if (app()->getLocale() === 'en') {
+            return (string) $value;
+        }
+
         return strtr((string) $value, ['0' => '০', '1' => '১', '2' => '২', '3' => '৩', '4' => '৪', '5' => '৫', '6' => '৬', '7' => '৭', '8' => '৮', '9' => '৯']);
     }
 }
@@ -30,6 +34,9 @@ if (! function_exists('bn_date')) {
             return '—';
         }
         $date = $date instanceof CarbonInterface ? $date : Carbon::parse($date);
+        if (app()->getLocale() === 'en') {
+            return $date->format($withYear ? 'j F Y' : 'j F');
+        }
         $months = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
         $text = bn($date->day).' '.$months[$date->month - 1];
 
@@ -41,6 +48,9 @@ if (! function_exists('bn_weekday')) {
     function bn_weekday($date): string
     {
         $date = $date instanceof CarbonInterface ? $date : Carbon::parse($date);
+        if (app()->getLocale() === 'en') {
+            return $date->format('l');
+        }
 
         return ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'][$date->dayOfWeek];
     }
@@ -76,6 +86,18 @@ if (! function_exists('logo_url')) {
     function logo_url(): string
     {
         return file_exists(public_path('images/logo.png')) ? asset('images/logo.png') : asset('images/logo.svg');
+    }
+}
+
+if (! function_exists('setting_t')) {
+    /** A website text setting in the visitor's language: "<key>_en" on the English site when filled. */
+    function setting_t(string $key): string
+    {
+        if (app()->getLocale() === 'en' && filled($en = setting($key.'_en'))) {
+            return $en;
+        }
+
+        return setting($key);
     }
 }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Support\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -66,10 +67,28 @@ class PaymentController extends Controller
             'next_installment_amount' => $data['next_installment_amount'] ?? null,
         ]);
 
-        $link = '<a href="'.e(route('admin.payments.receipt', $payment)).'" target="_blank">রসিদ প্রিন্ট করুন</a>';
+        $student->loadSum('payments', 'amount');
+        $emailed = Notifier::toStudent($student, 'payment', ['amount' => bn(number_format($payment->amount)), 'receipt' => $payment->receipt_no, 'date' => bn_date($payment->paid_on)]);
+
+        $link = '<a href="'.e(route('admin.payments.receipt', $payment)).'" target="_blank">রসিদ প্রিন্ট করুন</a>'.($emailed ? ' · স্টুডেন্টকে ইমেইল করা হয়েছে।' : '');
 
         return redirect()->route('admin.students.show', $student)
             ->with('ok', 'পেমেন্ট গ্রহণ করা হয়েছে — রসিদ নং '.e($payment->receipt_no).'। '.$link);
+    }
+
+    /** Fix a wrongly entered payment (the change is kept in the activity log). */
+    public function update(Request $request, Payment $payment)
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'integer', 'min:1'],
+            'paid_on' => ['required', 'date'],
+            'item' => ['required', 'string', 'max:255'],
+            'method' => ['required', Rule::in(Payment::METHODS)],
+        ], [], ['amount' => 'পরিমাণ', 'paid_on' => 'তারিখ', 'item' => 'খাত', 'method' => 'মাধ্যম']);
+
+        $payment->update($data);
+
+        return redirect(route('admin.students.show', $payment->student_id).'#fees')->with('ok', 'রসিদ '.e($payment->receipt_no).' সংশোধন করা হয়েছে।');
     }
 
     public function destroy(Payment $payment)

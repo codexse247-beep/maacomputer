@@ -42,6 +42,9 @@
         @include('admin.partials.field', ['name' => 'published_on', 'label' => 'তারিখ', 'req' => true, 'type' => 'date', 'value' => $n->published_on, 'id' => 'nd'])
         <div class="ff"><label for="nb">বিবরণ</label><textarea class="ta" id="nb" name="body" placeholder="নোটিশের লেখা" style="min-height:120px">{{ old('body', $n->body) }}</textarea></div>
         <label class="sw" data-for="all" @if ($audience !== 'all') hidden @endif><input type="checkbox" name="is_public" value="1" @checked(old('is_public', $n->is_public))>ওয়েবসাইটেও দেখান</label>
+        @unless ($n->exists)
+            <label class="sw"><input type="checkbox" name="send_email" value="1" @checked(old('send_email')) @disabled(! \App\Support\Notifier::enabled())>যাদের জন্য নোটিশ, তাদের ইমেইলেও পাঠান @unless (\App\Support\Notifier::enabled())<span class="mute" style="font-size:13px">(ইমেইল চালু নেই)</span>@endunless</label>
+        @endunless
         <div class="row">
             @if ($n->exists)<a class="btn" href="{{ route('admin.notices.index') }}">বাতিল</a>@endif
             <button class="btn p">{{ $n->exists ? 'সংরক্ষণ' : 'প্রকাশ করুন' }}</button>

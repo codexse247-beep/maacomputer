@@ -21,3 +21,4 @@
     <label class="sw"><input type="checkbox" name="active" value="1" @checked(old('active', $t->active))>সক্রিয়</label>
     <label class="sw"><input type="checkbox" name="show_on_site" value="1" @checked(old('show_on_site', $t->show_on_site))>ওয়েবসাইটে দেখান</label>
 </div>
+@include('admin.partials.english', ['model' => $t, 'fields' => ['name' => ['Name', 'text'], 'subject' => ['Subject / designation', 'text'], 'bio' => ['Short bio', 'textarea']]])

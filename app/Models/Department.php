@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Department extends Model
 {
+    use LogsActivity, Translatable;
+
     protected $guarded = [];
 
     public function batches(): HasMany
@@ -24,12 +26,17 @@ class Department extends Model
     public function learnList(): array
     {
         return array_values(array_filter(array_map('trim', preg_split('/?
-/', (string) $this->learn))));
+/', (string) $this->tr('learn')))));
     }
 
     /** Short topic chips shown on the public site, e.g. "ফটোশপ, ইলাস্ট্রেটর". */
     public function topicList(): array
     {
-        return array_values(array_filter(array_map('trim', explode(',', (string) $this->topics))));
+        return array_values(array_filter(array_map('trim', explode(',', (string) $this->tr('topics')))));
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
     }
 }

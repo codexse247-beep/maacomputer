@@ -20,16 +20,18 @@
             <div style="width:96px;height:96px;border-radius:20px;background:#E3F0DD;border:2px dashed #9DBB93;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#176008;font-weight:600;font-size:13px;gap:2px;flex:none">@include('partials.icon', ['n' => 'user', 'size' => 26, 'w' => 1.8])ছবি নেই</div>
         @endif
         <div style="display:flex;flex-direction:column;gap:6px">
-            <div class="row"><h1 class="h1" style="font-size:30px">{{ $student->name_bn }}</h1><span class="badge {{ $student->statusTone() }}">{{ $student->statusLabel() }}</span><span class="badge {{ $student->feeTone() }}">ফি {{ $student->feeLabel() }}</span></div>
+            <div class="row"><h1 class="h1" style="font-size:30px">{{ $student->name_bn }}</h1><span class="badge {{ $student->statusTone() }}">{{ $student->statusLabel() }}</span>@can('area', 'fees')<span class="badge {{ $student->feeTone() }}">ফি {{ $student->feeLabel() }}</span>@endcan</div>
             <div class="mute" style="font-size:15px">{{ $student->name_en }} · স্টুডেন্ট আইডি <b style="color:#14201A">{{ $student->student_code }}</b> · রোল {{ bn(str_pad($student->roll, 2, '0', STR_PAD_LEFT)) }}</div>
             <div class="mute" style="font-size:15px">{{ $batch->department->name }} · {{ $batch->label() }} · ধাপ ৪/৪</div>
         </div>
     </div>
     <div class="row">
+        @can('area', 'admissions')
         <a class="btn" href="{{ route('admin.students.id-card', $student) }}">আইডি কার্ড</a>
         <a class="btn" href="{{ route('admin.students.form', $student) }}" target="_blank">ভর্তি ফরম প্রিন্ট</a>
         <form method="POST" action="{{ route('admin.students.password', $student) }}" onsubmit="return confirm('নতুন পোর্টাল পাসওয়ার্ড তৈরি করবেন? আগের পাসওয়ার্ড আর কাজ করবে না।')">@csrf<button class="btn">পাসওয়ার্ড রিসেট</button></form>
         <a class="btn p" href="{{ route('admin.students.edit', $student) }}">@include('partials.icon', ['n' => 'edit', 'size' => 18])তথ্য সম্পাদনা / ব্যাচ পরিবর্তন</a>
+        @endcan
     </div>
 </div>
 
@@ -38,7 +40,7 @@
     <a class="tab" href="#contact">যোগাযোগ ও ঠিকানা</a>
     <a class="tab" href="#education">শিক্ষাগত যোগ্যতা</a>
     <a class="tab" href="#course">ভর্তি ও কোর্স</a>
-    <a class="tab" href="#fees">ফি ও পেমেন্ট</a>
+    @can('area', 'fees')<a class="tab" href="#fees">ফি ও পেমেন্ট</a>@endcan
     <a class="tab" href="#results">উপস্থিতি ও ফলাফল</a>
     <a class="tab" href="#docs">ডকুমেন্ট ও নোট</a>
 </nav>
@@ -116,6 +118,7 @@
         </div>
     </section>
 
+    @can('area', 'fees')
     <section id="fees" class="card" style="overflow:hidden">
         <div class="sh"><h2>পেমেন্টের ইতিহাস</h2></div>
         <div class="scroll">
@@ -127,6 +130,7 @@
                         <td class="td"><b>{{ $p->receipt_no }}</b></td><td class="td">{{ bn_date($p->paid_on) }}</td><td class="td">{{ $p->item }}</td><td class="td"><b>{{ taka($p->amount) }}</b></td><td class="td">{{ $p->method }}</td>
                         <td class="td" style="text-align:right;white-space:nowrap">
                             <a class="el" href="{{ route('admin.payments.receipt', $p) }}">রসিদ</a>
+                            <a class="el" href="{{ route('admin.students.show', [$student, 'edit_payment' => $p->id]) }}#fees">সম্পাদনা</a>
                             <form method="POST" action="{{ route('admin.payments.destroy', $p) }}" style="display:inline" onsubmit="return confirm('রসিদ {{ $p->receipt_no }} মুছে ফেলবেন?')">@csrf @method('DELETE')<button class="el" style="color:#B00E28">মুছুন</button></form>
                         </td>
                     </tr>
@@ -151,7 +155,23 @@
                 <div style="padding:0 24px 24px"><button class="btn p">পেমেন্ট গ্রহণ ও রসিদ তৈরি</button></div>
             </form>
         </details>
+        @if ($editPayment = $student->payments->firstWhere('id', (int) request('edit_payment')))
+            <details class="panel" open>
+                <summary>রসিদ {{ $editPayment->receipt_no }} সংশোধন</summary>
+                <form method="POST" action="{{ route('admin.payments.update', $editPayment) }}">
+                    @csrf @method('PUT')
+                    <div class="fgrid">
+                        @include('admin.partials.field', ['name' => 'amount', 'label' => 'পরিমাণ (৳)', 'req' => true, 'value' => $editPayment->amount, 'mode' => 'numeric', 'id' => 'e_amount'])
+                        @include('admin.partials.field', ['name' => 'paid_on', 'label' => 'তারিখ', 'req' => true, 'type' => 'date', 'value' => $editPayment->paid_on, 'id' => 'e_paid_on'])
+                        @include('admin.partials.field', ['name' => 'item', 'label' => 'খাত', 'req' => true, 'value' => $editPayment->item, 'id' => 'e_item'])
+                        @include('admin.partials.select', ['name' => 'method', 'label' => 'মাধ্যম', 'req' => true, 'value' => $editPayment->method, 'options' => $methods, 'id' => 'e_method'])
+                    </div>
+                    <div class="row" style="padding:0 24px 24px"><a class="btn" href="{{ route('admin.students.show', $student) }}#fees">বাতিল</a><button class="btn p">সংশোধন সংরক্ষণ</button></div>
+                </form>
+            </details>
+        @endif
     </section>
+    @endcan
 
     <section id="results" class="card" style="overflow:hidden">
         <div class="sh"><h2>মূল্যায়ন ও ফলাফল</h2></div>
@@ -162,7 +182,7 @@
                 @forelse ($student->assessments as $m)
                     <tr>
                         <td class="td"><b>{{ $m->title }}</b>@if ($m->remark)<br><span class="mute" style="font-size:13px">{{ $m->remark }}</span>@endif</td><td class="td">{{ bn_date($m->held_on) }}</td><td class="td"><b>{{ $m->scoreText() }}</b> <span class="badge {{ $m->grade()[1] }}">{{ $m->grade()[0] }}</span></td><td class="td"><span class="badge {{ $m->statusTone() }}">{{ $m->statusLabel() }}</span>@unless ($m->published) <span class="badge b-n">খসড়া</span>@endunless</td>
-                        <td class="td" style="text-align:right"><form method="POST" action="{{ route('admin.assessments.destroy', $m) }}" onsubmit="return confirm('এই ফলাফল মুছবেন?')">@csrf @method('DELETE')<button class="el" style="color:#B00E28">মুছুন</button></form></td>
+                        <td class="td" style="text-align:right">@can('area', 'classes')<form method="POST" action="{{ route('admin.assessments.destroy', $m) }}" onsubmit="return confirm('এই ফলাফল মুছবেন?')">@csrf @method('DELETE')<button class="el" style="color:#B00E28">মুছুন</button></form>@endcan</td>
                     </tr>
                 @empty
                     <tr><td class="td mute" colspan="5">এখনো কোনো ফলাফল নেই।</td></tr>
@@ -170,6 +190,7 @@
                 </tbody>
             </table>
         </div>
+        @can('area', 'classes')
         <details class="panel" @if ($errors->hasAny(['title', 'score', 'max_score'])) open @endif>
             <summary>+ ফলাফল যোগ করুন</summary>
             <form method="POST" action="{{ route('admin.students.assessments', $student) }}">
@@ -184,6 +205,7 @@
                 <div style="padding:0 24px 24px"><button class="btn p">ফলাফল যোগ করুন</button></div>
             </form>
         </details>
+        @endcan
     </section>
 
     <section id="docs" class="card">
@@ -195,6 +217,7 @@
                 <p class="mute" style="margin:0">কোনো ডকুমেন্ট আপলোড হয়নি।</p>
             @endforelse
         </div>
+        @can('area', 'admissions')
         <details class="panel">
             <summary>+ ডকুমেন্ট আপলোড</summary>
             <form method="POST" action="{{ route('admin.students.documents', $student) }}" enctype="multipart/form-data">
@@ -208,6 +231,7 @@
                 <div style="padding:0 24px 24px"><button class="btn p">আপলোড করুন</button></div>
             </form>
         </details>
+        @endcan
 
         <div class="sh" style="border-top:1px solid #DFE5DB"><h2>অভ্যন্তরীণ নোট</h2><span style="font-size:14px;color:#55635A">শুধু অ্যাডমিন দেখতে পারবেন</span></div>
         <div style="padding:0 24px 24px;display:flex;flex-direction:column;gap:12px">
@@ -226,11 +250,13 @@
         </div>
     </section>
 
+    @can('area', 'admissions')
     <form method="POST" action="{{ route('admin.students.destroy', $student) }}" onsubmit="return confirm('{{ $student->name_bn }} এর সব তথ্য, পেমেন্ট ও ডকুমেন্ট স্থায়ীভাবে মুছে যাবে। নিশ্চিত?')">
         @csrf @method('DELETE')
         <button class="btn d">স্টুডেন্ট মুছে ফেলুন</button>
         <span class="mute" style="font-size:14px;margin-left:8px">ভুল করে ভর্তি হলে ব্যবহার করুন। কোর্স ছেড়ে দিলে অবস্থা "বাদ পড়েছে" করুন।</span>
     </form>
+    @endcan
 </div>
 
 <aside style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:24px">
@@ -239,13 +265,15 @@
         @if ($student->certificate_no)
             <div class="fld"><span>সনদ নম্বর</span><b>{{ $student->certificate_no }}</b></div>
             <div class="fld"><span>প্রদানের তারিখ</span><b>{{ bn_date($student->certificate_issued_on) }}</b></div>
+            @can('area', 'admissions')<a class="btn p" href="{{ route('admin.students.certificate.print', $student) }}" target="_blank">@include('partials.icon', ['n' => 'printer', 'size' => 18])সনদ প্রিন্ট করুন</a>@endcan
             <a class="el" style="padding:0" href="{{ route('verify', ['certificate_no' => $student->certificate_no, 'dob' => $student->dob?->format('Y-m-d')]) }}" target="_blank">ওয়েবসাইটে যাচাই করে দেখুন</a>
         @else
             <p class="mute" style="margin:0;font-size:15px">কোর্স শেষ হলে সনদ দিন। সনদ নম্বর তৈরি হবে এবং ওয়েবসাইটে যাচাই করা যাবে।</p>
-            <form method="POST" action="{{ route('admin.students.certificate', $student) }}" onsubmit="return confirm('{{ $student->name_bn }} কে সনদ দেবেন? স্টুডেন্টের অবস্থা হবে কোর্স সম্পন্ন।')">@csrf<button class="btn">সনদ প্রদান করুন</button></form>
+            @can('area', 'admissions')<form method="POST" action="{{ route('admin.students.certificate', $student) }}" onsubmit="return confirm('{{ $student->name_bn }} কে সনদ দেবেন? স্টুডেন্টের অবস্থা হবে কোর্স সম্পন্ন।')">@csrf<button class="btn">সনদ প্রদান করুন</button></form>@endcan
         @endif
     </div>
 
+    @can('area', 'fees')
     <div class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
         <h2 style="margin:0;font-size:19px;font-weight:700;color:#0E3A05">ফি-এর সারসংক্ষেপ</h2>
         <div style="display:flex;flex-direction:column;gap:10px;font-size:16px">
@@ -261,6 +289,7 @@
             <div style="background:{{ $student->next_installment_date->isPast() ? '#FCEBEC;color:#8A0A20' : '#FFF3DB;color:#8A5300' }};border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.6">পরবর্তী কিস্তি: @if ($student->next_installment_amount)<b>{{ taka($student->next_installment_amount) }}</b> · @endif{{ bn_date($student->next_installment_date) }}{{ $student->next_installment_date->isPast() ? ' (তারিখ পেরিয়ে গেছে)' : '' }}</div>
         @endif
     </div>
+    @endcan
 
     <div class="card" style="padding:24px;display:flex;flex-direction:column;gap:18px">
         <h2 style="margin:0;font-size:19px;font-weight:700;color:#0E3A05">উপস্থিতি</h2>

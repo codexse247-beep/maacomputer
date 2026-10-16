@@ -62,6 +62,9 @@ class TeacherController extends Controller
         $data['sort'] = $data['sort'] ?? 0;
         $data['show_on_site'] = $request->boolean('show_on_site');
         $data['active'] = $request->boolean('active');
+        if (($en = Teacher::englishInput($request, ['name', 'subject', 'bio'])) !== null) {
+            $data['en'] = $en;
+        }
 
         return $data;
     }

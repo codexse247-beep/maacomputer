@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Batch extends Model
 {
+    use LogsActivity;
+
     protected $guarded = [];
 
     public const STATUSES = [
@@ -65,5 +67,10 @@ class Batch extends Model
     public function serial(): string
     {
         return preg_replace('/\D/', '', $this->code) ?: (string) $this->id;
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->code.' · '.$this->name;
     }
 }

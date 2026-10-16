@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
+    use LogsActivity;
+
     protected $guarded = [];
 
     public const METHODS = ['নগদ (ক্যাশ)', 'বিকাশ', 'নগদ (মোবাইল)', 'রকেট', 'ব্যাংক'];
@@ -32,5 +34,10 @@ class Payment extends Model
         $n = $last ? (int) preg_replace('/\D/', '', $last) + 1 : 1;
 
         return 'MR-'.str_pad((string) $n, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->receipt_no.' · ৳'.$this->amount.' · '.($this->student?->name_bn ?? '');
     }
 }

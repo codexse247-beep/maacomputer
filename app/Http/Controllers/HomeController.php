@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Batch;
 use App\Models\Department;
 use App\Models\Enquiry;
+use App\Models\Event;
 use App\Models\Faq;
 use App\Models\GalleryPhoto;
 use App\Models\Notice;
@@ -42,8 +43,9 @@ class HomeController extends Controller
         return view('site.admission', [
             'departments' => Department::orderBy('sort')->orderBy('id')->get(),
             'selected' => $request->integer('department') ?: null,
-            'times' => self::TIMES,
-            'education' => self::EDUCATION,
+            // Stored in Bangla, shown in the visitor's language
+            'times' => collect(self::TIMES)->mapWithKeys(fn ($t) => [$t => __($t)])->all(),
+            'education' => collect(self::EDUCATION)->mapWithKeys(fn ($e) => [$e => __($e)])->all(),
         ]);
     }
 
@@ -59,13 +61,13 @@ class HomeController extends Controller
             'department_id' => ['required', 'exists:departments,id'],
             'preferred_time' => ['nullable', Rule::in(self::TIMES)],
             'message' => ['nullable', 'string', 'max:2000'],
-        ], ['regex' => ':attribute সঠিক মোবাইল নম্বর নয়।'], [
-            'name' => 'নাম', 'father_name' => 'পিতার নাম', 'phone' => 'মোবাইল নম্বর', 'department_id' => 'বিভাগ', 'dob' => 'জন্ম তারিখ',
+        ], ['regex' => __(':attribute সঠিক মোবাইল নম্বর নয়।')], [
+            'name' => __('নাম'), 'father_name' => __('পিতার নাম'), 'phone' => __('মোবাইল নম্বর'), 'department_id' => __('বিভাগ'), 'dob' => __('জন্ম তারিখ'), 'email' => __('ইমেইল'),
         ]);
 
         Enquiry::create($data + ['type' => 'admission']);
 
-        return redirect()->route('admission')->with('ok', 'আপনার আবেদন পাওয়া গেছে। শীঘ্রই আমরা আপনাকে ফোন করব।');
+        return redirect()->route('admission')->with('ok', __('আপনার আবেদন পাওয়া গেছে। শীঘ্রই আমরা আপনাকে ফোন করব।'));
     }
 
     public function about()
@@ -110,7 +112,7 @@ class HomeController extends Controller
             $data = $request->validate([
                 'certificate_no' => ['required', 'string', 'max:40'],
                 'dob' => ['required', 'date'],
-            ], [], ['certificate_no' => 'সনদ নম্বর', 'dob' => 'জন্ম তারিখ']);
+            ], [], ['certificate_no' => __('সনদ নম্বর'), 'dob' => __('জন্ম তারিখ')]);
 
             $result = Student::with('batch.department')
                 ->where('certificate_no', strtoupper(trim($data['certificate_no'])))
@@ -138,11 +140,11 @@ class HomeController extends Controller
             'phone' => ['required', 'regex:/^\+?[0-9\- ]{6,20}$/'],
             'subject' => ['nullable', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:3000'],
-        ], ['regex' => ':attribute সঠিক মোবাইল নম্বর নয়।'], ['name' => 'নাম', 'phone' => 'মোবাইল নম্বর', 'message' => 'বার্তা']);
+        ], ['regex' => __(':attribute সঠিক মোবাইল নম্বর নয়।')], ['name' => __('নাম'), 'phone' => __('মোবাইল নম্বর'), 'message' => __('বার্তা')]);
 
         Enquiry::create($data + ['type' => 'contact']);
 
-        return redirect()->route('contact')->with('ok', 'ধন্যবাদ! আপনার মেসেজ পাওয়া গেছে। আমরা শীঘ্রই যোগাযোগ করব।');
+        return redirect()->route('contact')->with('ok', __('ধন্যবাদ! আপনার মেসেজ পাওয়া গেছে। আমরা শীঘ্রই যোগাযোগ করব।'));
     }
 
     public function notices(Request $request)
@@ -152,6 +154,8 @@ class HomeController extends Controller
         return view('notices', [
             'notices' => $this->publicNotices()->when($tag, fn ($q) => $q->where('tag', $tag))->paginate(15)->withQueryString(),
             'tag' => $tag,
+            'events' => Event::where('is_public', true)->where(fn ($q) => $q->where('starts_on', '>=', now()->toDateString())->orWhere('ends_on', '>=', now()->toDateString()))
+                ->orderBy('starts_on')->take(6)->get(),
         ]);
     }
 
@@ -174,7 +178,7 @@ class HomeController extends Controller
         $data = $request->validate([
             'student_code' => ['required', 'string', 'max:30'],
             'phone' => ['required', 'regex:/^\+?[0-9\- ]{6,20}$/'],
-        ], ['regex' => ':attribute সঠিক মোবাইল নম্বর নয়।'], ['student_code' => 'স্টুডেন্ট আইডি', 'phone' => 'মোবাইল নম্বর']);
+        ], ['regex' => __(':attribute সঠিক মোবাইল নম্বর নয়।')], ['student_code' => __('স্টুডেন্ট আইডি'), 'phone' => __('মোবাইল নম্বর')]);
 
         $code = strtoupper(trim($data['student_code']));
         $student = Student::where('student_code', $code)->first();
@@ -188,6 +192,23 @@ class HomeController extends Controller
             ]);
         }
 
-        return redirect()->route('forgot')->with('ok', 'অনুরোধ পাওয়া গেছে। যাচাই করে অফিস থেকে আপনাকে ফোনে নতুন পাসওয়ার্ড জানানো হবে।');
+        return redirect()->route('forgot')->with('ok', __('অনুরোধ পাওয়া গেছে। যাচাই করে অফিস থেকে আপনাকে ফোনে নতুন পাসওয়ার্ড জানানো হবে।'));
+    }
+
+    /** For Google: every public page, in both languages. */
+    public function sitemap()
+    {
+        $pages = ['home' => '1.0', 'departments' => '0.9', 'admission' => '0.9', 'about' => '0.7', 'instructors' => '0.6', 'gallery' => '0.6',
+            'notices' => '0.8', 'faq' => '0.6', 'contact' => '0.7', 'verify' => '0.5', 'privacy' => '0.3'];
+        $updated = max(Notice::max('updated_at') ?? now(), Department::max('updated_at') ?? now());
+
+        return response()->view('sitemap', ['pages' => $pages, 'updated' => \Illuminate\Support\Carbon::parse($updated)], 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+    }
+
+    public function robots()
+    {
+        $lines = ['User-agent: *', 'Disallow: /admin', 'Disallow: /portal', 'Disallow: /staff', '', 'Sitemap: '.route('sitemap')];
+
+        return response(implode("\n", $lines)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 }

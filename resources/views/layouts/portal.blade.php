@@ -31,7 +31,9 @@
         <a class="nl {{ $dash ? 'on' : '' }}" href="{{ $link('top') }}">ড্যাশবোর্ড</a>
         <a class="nl" href="{{ $link('course') }}">আমার কোর্স</a>
         <a class="nl {{ request()->routeIs('portal.videos') ? 'on' : '' }}" href="{{ route('portal.videos') }}">ক্লাস ভিডিও</a>
-        <a class="nl" href="{{ $link('fees') }}">ফি ও রসিদ</a>
+        <a class="nl {{ request()->routeIs('portal.study', 'portal.assignments.*', 'portal.quizzes.*') ? 'on' : '' }}" href="{{ route('portal.study') }}">অ্যাসাইনমেন্ট ও কুইজ</a>
+        <a class="nl {{ request()->routeIs('portal.calendar') ? 'on' : '' }}" href="{{ route('portal.calendar') }}">ক্যালেন্ডার</a>
+        <a class="nl {{ request()->routeIs('portal.pay') ? 'on' : '' }}" href="{{ \App\Models\OnlinePayment::available() ? route('portal.pay') : $link('fees') }}">ফি ও রসিদ</a>
         <a class="nl" href="{{ $link('results') }}">ফলাফল</a>
         <a class="nl" href="{{ $link('notices') }}">নোটিশ</a>
         <a class="nl {{ request()->routeIs('portal.profile') ? 'on' : '' }}" href="{{ route('portal.profile') }}">প্রোফাইল</a>

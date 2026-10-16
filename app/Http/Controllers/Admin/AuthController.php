@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,13 +14,14 @@ class AuthController extends Controller
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
-        ], [], ['email' => 'ইমেইল', 'password' => 'পাসওয়ার্ড']);
+        ], [], ['email' => __('ইমেইল'), 'password' => __('পাসওয়ার্ড')]);
 
         if (! Auth::guard('web')->attempt($data, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'ইমেইল বা পাসওয়ার্ড সঠিক নয়।'])->onlyInput('email');
+            return back()->withErrors(['email' => __('ইমেইল বা পাসওয়ার্ড সঠিক নয়।')])->onlyInput('email');
         }
 
         $request->session()->regenerate();
+        ActivityLog::record('login', $request->user('web'));
 
         return redirect()->intended(route('admin.dashboard'));
     }

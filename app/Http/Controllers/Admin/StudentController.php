@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Models\Batch;
 use App\Models\Department;
+use App\Models\Enquiry;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentDocument;
+use App\Support\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -43,7 +45,17 @@ class StudentController extends Controller
             'batch_id' => $request->integer('batch') ?: null,
         ]);
 
-        return view('admin.students.form', $this->formData($student));
+        // Admitting someone who applied on the website: copy what they sent.
+        $enquiry = $request->integer('enquiry') ? Enquiry::where('type', 'admission')->find($request->integer('enquiry')) : null;
+        if ($enquiry) {
+            $student->fill(['name_bn' => $enquiry->name, 'father_name' => $enquiry->father_name, 'phone' => $enquiry->phone, 'email' => $enquiry->email, 'dob' => $enquiry->dob]);
+            if (! $student->batch_id && $enquiry->department_id) {
+                $student->batch_id = Batch::where('department_id', $enquiry->department_id)->whereIn('status', ['enrolling', 'running'])
+                    ->orderByRaw("status = 'enrolling' desc")->orderBy('start_date')->value('id');
+            }
+        }
+
+        return view('admin.students.form', $this->formData($student) + ['enquiry' => $enquiry]);
     }
 
     public function store(Request $request)
@@ -81,7 +93,19 @@ class StudentController extends Controller
 
         $this->storeUploads($request, $student);
 
-        return redirect()->route('admin.students.show', $student)->with('ok',
+        if ($enquiry = Enquiry::where('type', 'admission')->find($request->integer('enquiry_id'))) {
+            $enquiry->update(['status' => 'done', 'handled_by' => $request->user()->id]);
+            $details = collect([
+                $enquiry->education ? 'শিক্ষা: '.$enquiry->education : null,
+                $enquiry->preferred_time ? 'পছন্দের সময়: '.$enquiry->preferred_time : null,
+                $enquiry->message,
+            ])->filter()->implode("\n");
+            $student->notes()->create(['user_id' => $request->user()->id, 'body' => 'ওয়েবসাইটের অনলাইন আবেদন থেকে ভর্তি ('.bn_date($enquiry->created_at).')'.($details ? "\n".$details : '')]);
+        }
+
+        $emailed = Notifier::toStudent($student->load('batch.department')->loadSum('payments', 'amount'), 'admission', ['password' => $password]);
+
+        return redirect()->route('admin.students.show', $student)->with('ok', ($emailed ? 'আইডি ও পাসওয়ার্ড স্টুডেন্টকে ইমেইল করা হয়েছে। ' : '').
             'ভর্তি সম্পন্ন হয়েছে। স্টুডেন্ট আইডি <b>'.e($student->student_code).'</b> · পোর্টাল পাসওয়ার্ড <b>'.$password.'</b> — পাসওয়ার্ডটি স্টুডেন্টকে দিন, পরে আর দেখা যাবে না।');
     }
 

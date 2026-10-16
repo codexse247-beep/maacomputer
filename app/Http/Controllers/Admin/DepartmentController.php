@@ -83,6 +83,9 @@ class DepartmentController extends Controller
         ]);
         $data['code'] = strtoupper($data['code']);
         $data['sort'] = $data['sort'] ?? 0;
+        if (($en = Department::englishInput($request, ['name', 'course_name', 'duration', 'blurb', 'topics', 'learn', 'routine_note'])) !== null) {
+            $data['en'] = $en;
+        }
 
         return $data;
     }

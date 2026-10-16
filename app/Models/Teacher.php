@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Teacher extends Model
 {
+    use LogsActivity, Translatable;
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -28,5 +30,10 @@ class Teacher extends Model
     public function photoUrl(): ?string
     {
         return $this->photo ? asset('storage/'.$this->photo) : null;
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
     }
 }

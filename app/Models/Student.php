@@ -9,6 +9,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Student extends Authenticatable
 {
+    use LogsActivity;
+
     protected $guarded = [];
 
     protected $hidden = ['password', 'remember_token'];
@@ -30,6 +32,7 @@ class Student extends Authenticatable
     {
         return [
             'dob' => 'date',
+            'certificate_issued_on' => 'date',
             'admission_date' => 'date',
             'next_installment_date' => 'date',
             'education' => 'array',
@@ -198,5 +201,10 @@ class Student extends Authenticatable
         } while ($taken);
 
         return [$code, $roll];
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name_bn.' ('.$this->student_code.')';
     }
 }

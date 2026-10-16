@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 /** One class of a course (department): a video (uploaded file or link) plus optional note files. */
 class CourseVideo extends Model
 {
+    use LogsActivity;
+
     protected $guarded = [];
 
     protected $casts = ['release_on' => 'date', 'paid_only' => 'boolean'];
@@ -129,5 +131,10 @@ class CourseVideo extends Model
     public function deleteStoredFiles(): void
     {
         Storage::disk('local')->delete(array_filter([$this->path, ...$this->files->pluck('path')]));
+    }
+
+    public function activityLabel(): string
+    {
+        return ($this->class_no ? 'ক্লাস '.$this->class_no.' · ' : '').$this->title;
     }
 }

@@ -18,7 +18,7 @@
 </div>
 
 @if ($student->certificate_no)
-    <div class="flash ok">অভিনন্দন! আপনার সনদ প্রদান করা হয়েছে — সনদ নং <b>{{ $student->certificate_no }}</b>। যে কেউ <a href="{{ route('verify') }}">সনদ যাচাই</a> পেজে এটি যাচাই করতে পারবেন।</div>
+    <div class="flash ok">অভিনন্দন! আপনার সনদ প্রদান করা হয়েছে — সনদ নং <b>{{ $student->certificate_no }}</b>। যে কেউ <a href="{{ route('verify') }}">সনদ যাচাই</a> পেজে এটি যাচাই করতে পারবেন। <a href="{{ route('portal.certificate') }}" target="_blank"><b>সনদ দেখুন ও প্রিন্ট করুন</b></a></div>
 @endif
 
 <div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))">
@@ -46,8 +46,37 @@
         @if ($student->totalDue() && $student->next_installment_date)
             <span style="font-size:14px;color:#8A5300;font-weight:600">পরবর্তী কিস্তি: {{ $student->next_installment_amount ? taka($student->next_installment_amount).' · ' : '' }}{{ bn_date($student->next_installment_date) }}</span>
         @endif
+        @if ($student->totalDue() && \App\Models\OnlinePayment::available())
+            <a class="btn p" href="{{ route('portal.pay') }}" style="align-self:flex-start;margin-top:4px">বিকাশ / নগদে ফি দিন</a>
+        @endif
     </div>
 </div>
+
+@if ($videoTotal || $pendingAssignments->isNotEmpty() || $openQuizzes->isNotEmpty() || $events->isNotEmpty())
+<section class="card" style="padding:22px 24px;display:flex;flex-wrap:wrap;gap:20px 32px">
+    @if ($videoTotal)
+        <a href="{{ route('portal.videos') }}" style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit">
+            <span style="font-size:14px;font-weight:600;color:#55635A">ক্লাস ভিডিও</span>
+            <span style="font-size:22px;font-weight:700;color:#0E3A05">{{ bn($videoDone) }}/{{ bn($videoTotal) }} দেখা হয়েছে</span>
+            <span class="bar"><span style="width:{{ round($videoDone / $videoTotal * 100) }}%"></span></span>
+            @if ($nextVideo)<span style="font-size:14px;color:#176008;font-weight:600">পরের ক্লাস: {{ $nextVideo->class_no ? 'ক্লাস '.bn($nextVideo->class_no).' · ' : '' }}{{ $nextVideo->title }} →</span>@endif
+        </a>
+    @endif
+    @if ($pendingAssignments->isNotEmpty() || $openQuizzes->isNotEmpty())
+        <a href="{{ route('portal.study') }}" style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit">
+            <span style="font-size:14px;font-weight:600;color:#55635A">করতে বাকি</span>
+            @foreach ($pendingAssignments->take(3) as $a)<span style="font-size:15px">📝 {{ $a->title }}{{ $a->due_on ? ' — '.bn_date($a->due_on, false).'-এর মধ্যে' : '' }}</span>@endforeach
+            @foreach ($openQuizzes->take(3) as $q)<span style="font-size:15px">✅ কুইজ: {{ $q->title }}{{ $q->closes_on ? ' — '.bn_date($q->closes_on, false).'-এর মধ্যে' : '' }}</span>@endforeach
+        </a>
+    @endif
+    @if ($events->isNotEmpty())
+        <a href="{{ route('portal.calendar') }}" style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit">
+            <span style="font-size:14px;font-weight:600;color:#55635A">সামনে</span>
+            @foreach ($events as $e)<span style="font-size:15px"><span class="badge {{ $e->typeTone() }}" style="height:22px;padding:0 8px">{{ $e->typeLabel() }}</span> {{ $e->title }} · {{ $e->dateLabel() }}</span>@endforeach
+        </a>
+    @endif
+</section>
+@endif
 
 <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
     <div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px">
@@ -131,6 +160,7 @@
         <div class="card" style="padding:24px;display:flex;flex-direction:column;gap:12px">
             <h2 style="margin:0 0 4px;font-size:19px;font-weight:700;color:#0E3A05">ডাউনলোড</h2>
             <a class="dl" href="{{ route('portal.id-card') }}" target="_blank">আইডি কার্ড @include('partials.icon', ['n' => 'download', 'size' => 18])</a>
+            @if ($student->certificate_no)<a class="dl" href="{{ route('portal.certificate') }}" target="_blank">সনদ @include('partials.icon', ['n' => 'download', 'size' => 18])</a>@endif
             @foreach ($student->payments->take(4) as $p)
                 <a class="dl" href="{{ route('portal.receipt', $p) }}" target="_blank">রসিদ {{ $p->receipt_no }} @include('partials.icon', ['n' => 'download', 'size' => 18])</a>
             @endforeach

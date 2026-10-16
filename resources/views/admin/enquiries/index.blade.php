@@ -41,7 +41,7 @@
             </div>
             <div class="row" style="align-self:center">
                 @if ($e->type === 'admission' && $e->status === 'new')
-                    <a class="btn sm" href="{{ route('admin.students.create') }}">ভর্তি করুন</a>
+                    <a class="btn sm p" href="{{ route('admin.students.create', ['enquiry' => $e->id]) }}">ভর্তি করুন</a>
                 @endif
                 @if ($e->type === 'password' && ($s = \App\Models\Student::where('student_code', $e->student_code)->first()))
                     <a class="btn sm" href="{{ route('admin.students.show', $s) }}">প্রোফাইল খুলুন</a>

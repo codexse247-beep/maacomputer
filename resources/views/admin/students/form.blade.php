@@ -53,6 +53,10 @@
 
     <form method="POST" enctype="multipart/form-data" action="{{ $editing ? route('admin.students.update', $student) : route('admin.students.store') }}" style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px">
         @csrf
+        @if (! empty($enquiry))
+            <input type="hidden" name="enquiry_id" value="{{ $enquiry->id }}">
+            <div class="flash ok" role="status">অনলাইন আবেদন থেকে ভর্তি: <b>{{ $enquiry->name }}</b> ({{ bn($enquiry->phone) }})। আবেদনের তথ্য বসানো হয়েছে — বাকি ঘরগুলো পূরণ করুন।</div>
+        @endif
         @if ($editing) @method('PUT') @endif
 
         <section id="s1" class="card">

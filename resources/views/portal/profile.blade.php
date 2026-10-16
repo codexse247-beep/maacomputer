@@ -25,8 +25,36 @@
             <dt>ঠিকানা</dt><dd>{{ $student->presentAddress() }}</dd>
             @if ($student->certificate_no)<dt>সনদ নম্বর</dt><dd>{{ $student->certificate_no }}</dd>@endif
         </dl>
-        <p style="margin:16px 0 0;font-size:14px;color:#55635A">তথ্য বদলাতে চাইলে অফিসে জানান।</p>
+        <p style="margin:16px 0 0;font-size:14px;color:#55635A">নাম, জন্ম তারিখ বা কোর্সের তথ্য বদলাতে অফিসে জানান। মোবাইল, ইমেইল, ঠিকানা ও ছবি নিজেই বদলাতে পারবেন।</p>
     </div>
+
+    <form method="POST" action="{{ route('portal.profile.update') }}" enctype="multipart/form-data" class="pcard" style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:14px">
+        @csrf @method('PUT')
+        <h2 style="margin:0;font-size:22px;color:#0E3A05">যোগাযোগ ও ছবি</h2>
+        @foreach ([['phone', 'মোবাইল', 'tel', true], ['whatsapp', 'হোয়াটসঅ্যাপ (ঐচ্ছিক)', 'tel', false], ['email', 'ইমেইল (রসিদ ও নোটিশ এখানে আসবে)', 'email', false]] as [$name, $label, $type, $req])
+            <div class="ff">
+                <label for="pf_{{ $name }}">{{ $label }}</label>
+                <input class="in {{ $errors->has($name) ? 'bad' : '' }}" id="pf_{{ $name }}" name="{{ $name }}" type="{{ $type }}" value="{{ old($name, $student->$name) }}" @if ($req) required @endif>
+                @error($name)<span class="errm">{{ $message }}</span>@enderror
+            </div>
+        @endforeach
+        <fieldset style="border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:12px">
+            <legend class="lbl" style="margin-bottom:6px">বর্তমান ঠিকানা</legend>
+            @foreach ([['present_village', 'গ্রাম / রোড / বাসা', true], ['present_po', 'ডাকঘর', false], ['present_upazila', 'উপজেলা', true], ['present_district', 'জেলা', true]] as [$name, $label, $req])
+                <div class="ff">
+                    <label for="pf_{{ $name }}">{{ $label }}</label>
+                    <input class="in {{ $errors->has($name) ? 'bad' : '' }}" id="pf_{{ $name }}" name="{{ $name }}" value="{{ old($name, $student->$name) }}" @if ($req) required @endif>
+                    @error($name)<span class="errm">{{ $message }}</span>@enderror
+                </div>
+            @endforeach
+        </fieldset>
+        <div class="ff">
+            <label for="pf_photo">ছবি (পাসপোর্ট সাইজ, ২ MB পর্যন্ত)</label>
+            <input class="in" id="pf_photo" type="file" name="photo" accept="image/*" style="padding:10px">
+            @error('photo')<span class="errm">{{ $message }}</span>@enderror
+        </div>
+        <button class="btn p" type="submit">সংরক্ষণ</button>
+    </form>
 
     <form method="POST" action="{{ route('portal.password') }}" class="pcard" style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px">
         @csrf

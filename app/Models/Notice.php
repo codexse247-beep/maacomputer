@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notice extends Model
 {
+    use LogsActivity;
+
     protected $guarded = [];
 
     public const TAGS = [
@@ -59,5 +61,10 @@ class Notice extends Model
     public function tagTone(): string
     {
         return self::TAGS[$this->tag][1] ?? 'b-n';
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->title;
     }
 }

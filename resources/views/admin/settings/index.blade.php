@@ -73,12 +73,81 @@
         <p class="mute" style="margin:0;line-height:1.7">আইডি তৈরি হয় <b>MCT-ব্যাচের সংখ্যা-সিরিয়াল</b> ফরম্যাটে (যেমন GD-2607 ব্যাচের ৪ নম্বর স্টুডেন্ট → MCT-2607-004)। প্রতি ব্যাচে সিরিয়াল ০০১ থেকে শুরু হয়। সনদ নম্বর: MCT-C-বছর-সিরিয়াল।</p>
     </section>
 
+    <section id="english" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+        <h2 style="margin:0;font-size:20px;color:#0E3A05">ইংরেজি ওয়েবসাইটের লেখা</h2>
+        <p class="mute" style="margin:0">ওয়েবসাইটের ওপরে "English" চাপলে এই লেখাগুলো দেখাবে। খালি রাখলে বাংলা লেখাই দেখাবে। বিভাগ, শিক্ষক ও প্রশ্নোত্তরের ইংরেজি তাদের নিজের ফরমে দিন।</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px">
+            @include('admin.partials.field', $tf('area_en', 'Area'))
+            @include('admin.partials.field', $tf('address_en', 'Full address'))
+            @include('admin.partials.field', $tf('hours_en', 'Office hours'))
+            @include('admin.partials.field', $tf('privacy_date_en', 'Policy effective date'))
+        </div>
+        {!! $area('about_intro_en', 'About us — introduction', 3) !!}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:16px">
+            {!! $area('mission_en', 'Our mission') !!}
+            {!! $area('vision_en', 'Our vision') !!}
+            {!! $area('why_us_en', 'Why choose us') !!}
+        </div>
+        {!! $area('privacy_en', 'Privacy policy and terms ("## " starts a heading)', 8) !!}
+    </section>
+
+    <section id="pay" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+        <h2 style="margin:0;font-size:20px;color:#0E3A05">অনলাইন পেমেন্ট (বিকাশ / নগদ / রকেট)</h2>
+        <p class="mute" style="margin:0">যে নম্বর দেবেন, স্টুডেন্ট পোর্টালে সেই মাধ্যমে ফি দেওয়ার অপশন দেখাবে। স্টুডেন্ট ট্রানজেকশন আইডি জমা দেবে, আপনি "অনলাইন পেমেন্ট" পাতায় মিলিয়ে গ্রহণ করবেন। খালি রাখলে বন্ধ থাকবে।</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:16px">
+            @include('admin.partials.field', $tf('bkash_number', 'বিকাশ নম্বর', ['ph' => '01XXXXXXXXX', 'mode' => 'numeric']))
+            @include('admin.partials.field', $tf('nagad_number', 'নগদ নম্বর', ['ph' => '01XXXXXXXXX', 'mode' => 'numeric']))
+            @include('admin.partials.field', $tf('rocket_number', 'রকেট নম্বর', ['ph' => '01XXXXXXXXXX', 'mode' => 'numeric']))
+        </div>
+        {!! $area('pay_note', 'স্টুডেন্টদের জন্য নির্দেশনা', 3) !!}
+    </section>
+
+    <section id="email" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+        <h2 style="margin:0;font-size:20px;color:#0E3A05">ইমেইল</h2>
+        <p class="mute" style="margin:0;line-height:1.7">ভর্তির আইডি-পাসওয়ার্ড, পেমেন্টের রসিদ, কিস্তির রিমাইন্ডার ও নোটিশ স্টুডেন্টের ইমেইলে যাবে (যাদের ইমেইল ঠিকানা আছে)।
+            জিমেইল ব্যবহার করলে: Google অ্যাকাউন্টে 2-Step Verification চালু করে <b>App password</b> তৈরি করুন, সেটি নিচের পাসওয়ার্ড ঘরে দিন। সংরক্ষণের পর "ইমেইল" পাতা থেকে পরীক্ষামূলক ইমেইল পাঠিয়ে দেখুন।</p>
+        <label class="sw"><input type="hidden" name="mail_enabled" value="0"><input type="checkbox" name="mail_enabled" value="1" @checked(old('mail_enabled', $s['mail_enabled']) === '1')>ইমেইল পাঠানো চালু</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:16px">
+            @include('admin.partials.field', $tf('mail_username', 'ইমেইল ঠিকানা (লগইন)', ['type' => 'email', 'ph' => 'maacomputer@gmail.com']))
+            <div class="ff">
+                <label for="set_mail_password">পাসওয়ার্ড / App password</label>
+                <input class="in" id="set_mail_password" type="password" name="mail_password" autocomplete="new-password" placeholder="{{ filled($s['mail_password']) ? '•••••••• (সংরক্ষিত — বদলাতে নতুনটি লিখুন)' : '' }}">
+                @error('mail_password')<span class="errm">{{ $message }}</span>@enderror
+            </div>
+            @include('admin.partials.field', $tf('mail_host', 'SMTP সার্ভার', ['hint' => 'জিমেইল: smtp.gmail.com']))
+            @include('admin.partials.field', $tf('mail_port', 'পোর্ট', ['mode' => 'numeric', 'hint' => 'জিমেইল: 587']))
+            @include('admin.partials.field', $tf('mail_from', 'প্রেরকের ইমেইল (ঐচ্ছিক)', ['type' => 'email', 'hint' => 'খালি রাখলে লগইনের ঠিকানাই']))
+        </div>
+
+        <div style="border-top:1px solid #DFE5DB;padding-top:16px;display:flex;flex-direction:column;gap:12px">
+            <b style="color:#0E3A05">কিস্তির স্বয়ংক্রিয় রিমাইন্ডার</b>
+            <label class="sw"><input type="hidden" name="due_auto" value="0"><input type="checkbox" name="due_auto" value="1" @checked(old('due_auto', $s['due_auto']) === '1')>প্রতিদিন সকালে নিজে থেকে রিমাইন্ডার ইমেইল পাঠাবে</label>
+            <div style="max-width:260px">@include('admin.partials.field', $tf('due_days_before', 'কিস্তির কত দিন আগে', ['mode' => 'numeric', 'hint' => 'এই দিনে এবং কিস্তির দিনে পাঠাবে']))</div>
+        </div>
+
+        <details style="border-top:1px solid #DFE5DB;padding-top:16px">
+            <summary style="cursor:pointer;font-weight:700;color:#0E3A05">ইমেইলের লেখা</summary>
+            <p class="mute" style="margin:12px 0;font-size:14px">এই শব্দগুলো নিজে থেকে বসবে: {{ \App\Support\Notifier::PLACEHOLDERS }}</p>
+            <div style="display:flex;flex-direction:column;gap:18px">
+                @foreach (\App\Support\Notifier::EVENTS as $event => [$label])
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <label class="sw"><input type="hidden" name="notify_{{ $event }}" value="0"><input type="checkbox" name="notify_{{ $event }}" value="1" @checked(old('notify_'.$event, $s['notify_'.$event]) === '1')><b>{{ $label }}</b></label>
+                        <label class="sr" for="set_tpl_{{ $event }}">{{ $label }} — লেখা</label>
+                        <textarea id="set_tpl_{{ $event }}" name="tpl_{{ $event }}" class="ta" rows="6">{{ old('tpl_'.$event, $s['tpl_'.$event]) }}</textarea>
+                    </div>
+                @endforeach
+            </div>
+        </details>
+    </section>
+
     <div><button class="btn p">পরিবর্তন সংরক্ষণ</button></div>
 </form>
 
 <section id="users" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
     <h2 style="margin:0;font-size:20px;color:#0E3A05">ব্যবহারকারী ও ভূমিকা</h2>
-    <p class="mute" style="margin:0">অ্যাডমিন সব কিছু পারেন। স্টাফ ও অ্যাকাউন্টস সেটিংস ছাড়া বাকি সব পারেন।</p>
+    <ul class="mute" style="margin:0;padding-left:20px;line-height:1.8">
+        @foreach (\App\Models\User::ROLES as $k => $l)<li><b style="color:#14201A">{{ $l }}:</b> {{ \App\Models\User::ROLE_HELP[$k] }}</li>@endforeach
+    </ul>
     <div class="scroll">
         <table class="tbl" style="min-width:640px">
             <thead><tr><th class="th">নাম</th><th class="th">ইমেইল</th><th class="th">ভূমিকা</th><th class="th"></th></tr></thead>
@@ -126,6 +195,7 @@
         @csrf
         @include('admin.partials.field', ['name' => 'question', 'label' => 'নতুন প্রশ্ন', 'value' => '', 'id' => 'fq_q'])
         <div class="ff"><label for="fq_a">উত্তর</label><textarea id="fq_a" name="answer" class="ta">{{ old('answer') }}</textarea></div>
+        @include('admin.partials.english', ['model' => new \App\Models\Faq, 'fields' => ['question' => ['Question', 'text'], 'answer' => ['Answer', 'textarea']], 'style' => 'border:1px solid #DFE5DB;border-radius:12px'])
         <div><button class="btn">প্রশ্নোত্তর যোগ করুন</button></div>
     </form>
 </section>

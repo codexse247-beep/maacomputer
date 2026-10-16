@@ -10,7 +10,7 @@ class NormalizeDigits
 {
     private const FIELDS = [
         'course_fee', 'admission_fee', 'discount', 'amount', 'first_payment', 'capacity', 'score', 'max_score',
-        'next_installment_amount', 'installments', 'sort', 'class_no', 'phone', 'whatsapp', 'guardian_phone', 'emergency_phone', 'nid',
+        'next_installment_amount', 'installments', 'sort', 'class_no', 'max_marks', 'marks', 'time_limit', 'due_days_before', 'mail_port', 'bkash_number', 'nagad_number', 'rocket_number', 'phone', 'whatsapp', 'guardian_phone', 'emergency_phone', 'nid',
     ];
 
     public function handle(Request $request, Closure $next)

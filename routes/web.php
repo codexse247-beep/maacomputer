@@ -237,6 +237,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('drive/forever', [Admin\DriveController::class, 'destroy'])->name('drive.destroy');
             Route::delete('drive/trash', [Admin\DriveController::class, 'emptyTrash'])->name('drive.empty');
             Route::get('drive/{item}/download', [Admin\DriveController::class, 'download'])->name('drive.download');
+            Route::get('drive/{item}/thumb', [Admin\DriveController::class, 'thumb'])->name('drive.thumb');
             Route::get('drive/{item}/open', [Admin\DriveController::class, 'open'])->name('drive.open');
             Route::put('drive/{item}', [Admin\DriveController::class, 'update'])->name('drive.update');
             Route::post('drive/{item}/star', [Admin\DriveController::class, 'star'])->name('drive.star');

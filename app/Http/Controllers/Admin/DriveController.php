@@ -32,6 +32,10 @@ class DriveController extends Controller
         $q = trim((string) $request->query('q'));
         $folder = $request->integer('folder') ? DriveItem::where('is_folder', true)->findOrFail($request->integer('folder')) : null;
         [$sort, $dir] = $this->sort($request);
+        // List or grid, remembered for this login.
+        if (in_array($request->query('layout'), ['list', 'grid'], true)) {
+            $request->session()->put('drive_layout', $request->query('layout'));
+        }
 
         $items = match (true) {
             $q !== '' => DriveItem::where('name', 'like', '%'.addcslashes($q, '%_\\').'%')->orderByDesc('is_folder')->orderBy($sort, $dir)->limit(300)->get(),
@@ -53,8 +57,9 @@ class DriveController extends Controller
             'dir' => $dir,
             'folders' => $this->folderPaths(),
             'used' => (int) DriveItem::withTrashed()->sum('size'),
-            'free' => (int) @disk_free_space(Storage::disk('local')->path('')),
+            'free' => self::freeSpace(),
             'trashCount' => DriveItem::onlyTrashed()->count(),
+            'layout' => $request->session()->get('drive_layout', 'grid'),
         ]);
     }
 
@@ -95,8 +100,8 @@ class DriveController extends Controller
         $part = $disk->path(DriveItem::TMP.'/'.$request->user()->id.'_'.$data['upload_id'].'.part');
 
         if ($data['offset'] === 0) {
-            if ((int) @disk_free_space($disk->path('')) - $data['size'] < self::KEEP_FREE) {
-                return response()->json(['message' => 'কম্পিউটারে যথেষ্ট জায়গা নেই। পুরনো ফাইল মুছে ট্র্যাশ খালি করুন।'], 422);
+            if (self::freeSpace() - $data['size'] < self::KEEP_FREE) {
+                return response()->json(['message' => 'ড্রাইভের হার্ডডিস্কে যথেষ্ট জায়গা নেই। পুরনো ফাইল মুছে ট্র্যাশ খালি করুন।'], 422);
             }
             @unlink($part);
         }
@@ -153,6 +158,19 @@ class DriveController extends Controller
         abort_if($item->is_folder, 404);
 
         return $item->fileResponse($item->canOpen());
+    }
+
+    /** Small JPEG preview of a photo, made once and kept in drive-thumbs/. */
+    public function thumb(DriveItem $item)
+    {
+        abort_unless($item->hasThumb(), 404);
+        $disk = Storage::disk('local');
+        $thumb = $item->thumbPath();
+        if (! $disk->exists($thumb) && ! DriveItem::makeThumb($disk->path($item->path), $disk->path($thumb))) {
+            abort(404);
+        }
+
+        return response()->file($disk->path($thumb), ['Content-Type' => 'image/jpeg', 'Cache-Control' => 'private, max-age=604800']);
     }
 
     public function update(Request $request, DriveItem $item)
@@ -271,6 +289,18 @@ class DriveController extends Controller
         return $item->fileResponse();
     }
 
+    /**
+     * Free space where Drive files are kept. On this PC storage/app/private/drive is a link (junction) to the HDD,
+     * G:\MaaComputer-Drive\drive, so this measures the HDD, not the C: SSD.
+     */
+    public static function freeSpace(): int
+    {
+        $disk = Storage::disk('local');
+        $disk->makeDirectory(DriveItem::DIR);
+
+        return (int) @disk_free_space($disk->path(DriveItem::DIR));
+    }
+
     /** Delete rows and stored files of these items and everything inside them. Returns the number of top items. */
     public static function deleteForever(array $ids): int
     {
@@ -280,7 +310,7 @@ class DriveController extends Controller
         $all = [...$ids, ...DriveItem::descendantIds($ids)];
         $paths = DriveItem::withTrashed()->whereIn('id', $all)->whereNotNull('path')->pluck('path')->all();
         DriveItem::withTrashed()->whereIn('id', $all)->forceDelete();
-        Storage::disk('local')->delete($paths);
+        Storage::disk('local')->delete([...$paths, ...array_map(fn ($id) => DriveItem::THUMBS.'/'.$id.'.jpg', $all)]);
 
         return count($ids);
     }

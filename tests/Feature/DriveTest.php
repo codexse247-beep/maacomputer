@@ -181,4 +181,54 @@ class DriveTest extends TestCase
         $this->post('/admin/drive/upload', ['upload_id' => 'bigfile01', 'name' => 'big.zip', 'size' => DriveController::MAX_FILE + 1, 'offset' => 0,
             'chunk' => UploadedFile::fake()->createWithContent('piece', 'x')], ['Accept' => 'application/json'])->assertStatus(422);
     }
+
+    /** A 200×100 JPEG, optionally with an EXIF orientation like phone cameras write. */
+    private function jpeg(int $orientation = 0): string
+    {
+        $img = imagecreatetruecolor(200, 100);
+        ob_start();
+        imagejpeg($img);
+        $jpeg = ob_get_clean();
+        if (! $orientation) {
+            return $jpeg;
+        }
+        // TIFF (little-endian) with one IFD entry: Orientation (0x0112), SHORT, 1 value
+        $tiff = "II*\0".pack('V', 8).pack('v', 1).pack('vvVvv', 0x0112, 3, 1, $orientation, 0).pack('V', 0);
+        $app1 = "Exif\0\0".$tiff;
+
+        return "\xFF\xD8\xFF\xE1".pack('n', strlen($app1) + 2).$app1.substr($jpeg, 2);
+    }
+
+    public function test_grid_and_list_layouts_are_remembered(): void
+    {
+        $this->post('/admin/drive/folders', ['name' => 'ছবি']);
+        $this->uploadInPieces('photo.jpg', $this->jpeg(), 100000);
+        $this->uploadInPieces('notes.docx', 'PK fake', 100);
+
+        $this->get('/admin/drive')->assertOk()->assertSee('dv-grid', false)->assertSee('ছবি')->assertSee('notes.docx');
+        $this->get('/admin/drive?layout=list')->assertOk()->assertSee('<table class="tbl">', false);
+        $this->get('/admin/drive')->assertSee('<table class="tbl">', false);
+        $this->get('/admin/drive?layout=grid')->assertDontSee('<table class="tbl">', false);
+        $this->get('/admin/drive?view=trash')->assertOk();
+    }
+
+    public function test_photo_previews_are_small_and_upright(): void
+    {
+        $this->uploadInPieces('phone.jpg', $this->jpeg(6), 100000);
+        $item = DriveItem::sole();
+        $this->assertSame(6, DriveItem::jpegOrientation(Storage::disk('local')->path($item->path)));
+
+        $this->get("/admin/drive/{$item->id}/thumb")->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        Storage::disk('local')->assertExists($item->thumbPath());
+        // Turned upright: the 200×100 photo becomes 100×200.
+        [$w, $h] = getimagesize(Storage::disk('local')->path($item->thumbPath()));
+        $this->assertSame([100, 200], [$w, $h]);
+
+        $this->post('/admin/drive/trash', ['ids' => [$item->id]]);
+        $this->delete('/admin/drive/forever', ['ids' => [$item->id]]);
+        Storage::disk('local')->assertMissing($item->thumbPath());
+
+        $this->uploadInPieces('a.txt', 'x', 10);
+        $this->get('/admin/drive/'.DriveItem::sole()->id.'/thumb')->assertNotFound();
+    }
 }

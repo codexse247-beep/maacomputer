@@ -71,6 +71,39 @@ dialog.dv-dlg{border:0;border-radius:16px;padding:24px;width:min(440px,calc(100v
 dialog.dv-dlg::backdrop{background:rgba(20,32,26,.45)}
 dialog.dv-dlg h2{margin:0 0 14px;font-size:20px;color:#0E3A05}
 dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.dv-seg{display:inline-flex;border:1px solid #C9D2C5;border-radius:99px;overflow:hidden;height:40px}
+.dv-seg a{display:inline-flex;align-items:center;justify-content:center;width:44px;color:#55635A}
+.dv-seg a+a{border-left:1px solid #C9D2C5}
+.dv-seg a.on{background:#E3F0DD;color:#0E3A05}
+.dv-gwrap{padding:14px 20px 24px}
+.dv-gtools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.dv-chip{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:99px;border:1px solid #DFE5DB;color:#14201A;text-decoration:none;font-weight:600;font-size:13px}
+.dv-chip.on{background:#E3F0DD;border-color:#B7D3AB;color:#0E3A05}
+.dv-gh{margin:18px 0 10px;font-size:15px;font-weight:700;color:#55635A}
+.dv-fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.dv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.dv-tile,.dv-card{position:relative;background:#F1F4EF;border:1px solid transparent;border-radius:14px;transition:background .12s,border-color .12s}
+.dv-tile{display:flex;align-items:center;gap:10px;height:56px;padding:0 4px 0 12px}
+.dv-tile:hover,.dv-card:hover{background:#E6ECE2}
+.dv-tile:has(.sel:checked),.dv-card:has(.sel:checked){background:#D6E9CD;border-color:#176008}
+.dv-tname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:14px;color:#14201A;text-decoration:none}
+.dv-stretch::after{content:'';position:absolute;inset:0;border-radius:14px}
+.dv-tile .dv-menu,.dv-card .dv-menu,.dv-check{position:relative;z-index:2}
+.dv-check{width:18px;height:18px;margin:0;flex:none;accent-color:#176008;opacity:0;cursor:pointer}
+.dv-tile:hover .dv-check,.dv-card:hover .dv-check,.dv-check:checked,.dv-check:focus-visible,.dv-selecting .dv-check{opacity:1}
+.dv-tile .dv-check{position:absolute;left:17px;top:19px}
+.dv-tile:hover>.dv-ic,.dv-tile:has(.sel:checked)>.dv-ic,.dv-selecting .dv-tile>.dv-ic{visibility:hidden}
+.dv-card{display:flex;flex-direction:column;padding:6px 6px 10px}
+.dv-chead{display:flex;align-items:center;gap:8px;height:42px;padding-left:4px}
+.dv-chead .dv-check{position:absolute;left:13px;top:18px}
+.dv-card:hover .dv-chead>.dv-ic,.dv-card:has(.sel:checked) .dv-chead>.dv-ic,.dv-selecting .dv-chead>.dv-ic{visibility:hidden}
+.dv-prev{aspect-ratio:4/3;border-radius:10px;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.dv-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.dv-big{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--k)}
+.dv-big b{font-size:12px;letter-spacing:.5px}
+.dv-cfoot{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 6px 0;font-size:12px;color:#55635A}
+@media (hover: none){.dv-check{opacity:1}.dv-card .dv-chead>.dv-ic,.dv-tile>.dv-ic{visibility:hidden}}
+@media (max-width: 560px){.dv-grid,.dv-fgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dv-gwrap{padding:12px}}
 .dv-empty{padding:56px 24px;text-align:center;color:#55635A;display:flex;flex-direction:column;align-items:center;gap:10px}
 @media (max-width: 960px){
   .dv{flex-direction:column}
@@ -106,7 +139,7 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
         <a href="{{ route('admin.drive.index', ['view' => 'trash']) }}" class="{{ $trash ? 'on' : '' }}">@include('partials.icon', ['n' => 'trash'])ট্র্যাশ @if ($trashCount)<span class="cnt">{{ bn($trashCount) }}</span>@endif</a>
         <div class="storage" style="padding:14px;display:flex;flex-direction:column;gap:8px;font-size:13px">
             <div class="dv-meter" role="img" aria-label="জায়গা"><i style="width:{{ $total ? max(1, round($used / $total * 100)) : 0 }}%"></i></div>
-            <span class="mute">ড্রাইভে {{ DriveItem::sizeText($used) }} · কম্পিউটারে খালি {{ DriveItem::sizeText($free) }}</span>
+            <span class="mute">ড্রাইভে {{ DriveItem::sizeText($used) }} · হার্ডডিস্কে খালি {{ DriveItem::sizeText($free) }}</span>
         </div>
     </aside>
 
@@ -128,6 +161,10 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
                     <input class="in" type="search" name="q" value="{{ $q }}" placeholder="ড্রাইভে খুঁজুন" aria-label="ড্রাইভে খুঁজুন" style="width:200px;height:40px">
                     <button class="btn sm" style="height:40px" aria-label="খুঁজুন">@include('partials.icon', ['n' => 'search', 'size' => 18])</button>
                 </form>
+                <span class="dv-seg" role="group" aria-label="দেখার ধরন">
+                    <a href="{{ request()->fullUrlWithQuery(['layout' => 'list']) }}" class="{{ $layout === 'list' ? 'on' : '' }}" title="তালিকা" aria-label="তালিকা আকারে" @if ($layout === 'list') aria-current="true" @endif>@include('partials.icon', ['n' => 'list', 'size' => 18])</a>
+                    <a href="{{ request()->fullUrlWithQuery(['layout' => 'grid']) }}" class="{{ $layout === 'grid' ? 'on' : '' }}" title="গ্রিড" aria-label="গ্রিড আকারে" @if ($layout === 'grid') aria-current="true" @endif>@include('partials.icon', ['n' => 'grid', 'size' => 18])</a>
+                </span>
                 @if ($canUpload)
                     <button type="button" class="btn sm" style="height:40px" data-open="dlg-folder">@include('partials.icon', ['n' => 'folder', 'size' => 18])ফোল্ডার</button>
                     <button type="button" class="btn sm p" style="height:40px" onclick="document.getElementById('pick-files').click()">@include('partials.icon', ['n' => 'upload', 'size' => 18])আপলোড</button>
@@ -168,6 +205,8 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
                     <span>ফাইল টেনে এনে এখানে ছাড়ুন, অথবা “আপলোড” চাপুন।</span>
                 @endif
             </div>
+        @elseif ($layout === 'grid')
+            @include('admin.drive.grid')
         @else
             <div class="scroll" style="overflow-y:visible">
                 <table class="tbl">
@@ -181,56 +220,21 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
                     </tr></thead>
                     <tbody>
                     @foreach ($items as $it)
-                        @php
-                            $kind = $it->kind();
-                            $href = $trash ? null : ($it->is_folder ? route('admin.drive.index', ['folder' => $it->id]) : route('admin.drive.open', $it));
-                        @endphp
+                        @php $href = $trash ? null : ($it->is_folder ? route('admin.drive.index', ['folder' => $it->id]) : route('admin.drive.open', $it)); @endphp
                         <tr>
                             <td class="td" style="padding-right:0"><input type="checkbox" name="ids[]" value="{{ $it->id }}" form="bulk" class="sel" aria-label="{{ $it->name }} বাছুন"></td>
                             <td class="td" style="max-width:0;width:60%">
                                 <{{ $href ? 'a' : 'span' }} class="dv-name" @if ($href) href="{{ $href }}" @if (! $it->is_folder) target="_blank" @endif @endif title="{{ $it->name }}">
-                                    <span class="dv-ic" style="background:{{ $kindColors[$kind] }}1A;color:{{ $kindColors[$kind] }}">
-                                        @if ($it->hasThumb())<img src="{{ route('admin.drive.open', $it) }}" alt="" loading="lazy">
-                                        @elseif (isset($kindIcons[$kind]))@include('partials.icon', ['n' => $kindIcons[$kind], 'size' => 20, 'fill' => $kind === 'folder' ? 'currentColor' : 'none'])
-                                        @else<b style="font-size:10px;letter-spacing:.3px">{{ strtoupper(substr($it->extension(), 0, 4)) ?: 'FILE' }}</b>@endif
-                                    </span>
+                                    @include('admin.drive.icon')
                                     <span>{{ $it->name }}</span>
                                     @if ($it->starred)@include('partials.icon', ['n' => 'star', 'size' => 15, 'fill' => 'currentColor', 'style' => 'color:#C28A00;flex:none'])@endif
                                     @if ($it->share_token)<span title="শেয়ার লিংক চালু" style="flex:none;color:#1F5FA8;display:inline-flex">@include('partials.icon', ['n' => 'link', 'size' => 15])</span>@endif
                                 </{{ $href ? 'a' : 'span' }}>
-                                @if (($q !== '' || $view) && $it->parent_id && ! $trash)
-                                    <a href="{{ route('admin.drive.index', ['folder' => $it->parent_id]) }}" class="mute" style="font-size:12px;margin-left:48px;text-decoration:none">ফোল্ডার খুলুন →</a>
-                                @endif
                             </td>
                             <td class="td dv-hide mute" style="white-space:nowrap;font-size:14px">{{ bn(($trash ? $it->deleted_at : $it->updated_at)->format('d M Y')) }}</td>
                             <td class="td dv-hide mute" style="white-space:nowrap;font-size:14px">{{ $it->user?->name ?? '—' }}</td>
                             <td class="td mute" style="white-space:nowrap;font-size:14px">{{ $it->is_folder ? '—' : DriveItem::sizeText($it->size) }}</td>
-                            <td class="td" style="text-align:right">
-                                <details class="dv-menu dv-rowmenu">
-                                    <summary aria-label="{{ $it->name }} — আরও">@include('partials.icon', ['n' => 'more', 'size' => 20])</summary>
-                                    <div class="dv-pop">
-                                        @if ($trash)
-                                            <form method="POST" action="{{ route('admin.drive.restore') }}">@csrf<input type="hidden" name="ids[]" value="{{ $it->id }}"><button>@include('partials.icon', ['n' => 'restore', 'size' => 18])ফিরিয়ে আনুন</button></form>
-                                            <form method="POST" action="{{ route('admin.drive.destroy') }}" onsubmit="return confirm('চিরতরে মুছে যাবে। নিশ্চিত?')">@csrf @method('DELETE')<input type="hidden" name="ids[]" value="{{ $it->id }}"><button class="dng">@include('partials.icon', ['n' => 'trash', 'size' => 18])চিরতরে মুছুন</button></form>
-                                        @else
-                                            @if ($it->canOpen())<a href="{{ route('admin.drive.open', $it) }}" target="_blank">@include('partials.icon', ['n' => 'monitor', 'size' => 18])খুলে দেখুন</a>@endif
-                                            <a href="{{ route('admin.drive.download', $it) }}">@include('partials.icon', ['n' => 'download', 'size' => 18]){{ $it->is_folder ? 'ডাউনলোড (ZIP)' : 'ডাউনলোড' }}</a>
-                                            <button type="button" data-rename="{{ route('admin.drive.update', $it) }}" data-name="{{ $it->name }}">@include('partials.icon', ['n' => 'edit', 'size' => 18])নাম বদলান</button>
-                                            <button type="button" data-move="{{ $it->id }}">@include('partials.icon', ['n' => 'move', 'size' => 18])সরান</button>
-                                            <form method="POST" action="{{ route('admin.drive.star', $it) }}">@csrf<button>@include('partials.icon', ['n' => 'star', 'size' => 18]){{ $it->starred ? 'তারকা সরান' : 'তারকা দিন' }}</button></form>
-                                            @unless ($it->is_folder)
-                                                @if ($it->share_token)
-                                                    <button type="button" data-copy="{{ route('drive.shared', $it->share_token) }}">@include('partials.icon', ['n' => 'link', 'size' => 18])শেয়ার লিংক কপি</button>
-                                                    <form method="POST" action="{{ route('admin.drive.share', $it) }}">@csrf<input type="hidden" name="off" value="1"><button>@include('partials.icon', ['n' => 'link', 'size' => 18])শেয়ার বন্ধ করুন</button></form>
-                                                @else
-                                                    <form method="POST" action="{{ route('admin.drive.share', $it) }}">@csrf<button>@include('partials.icon', ['n' => 'link', 'size' => 18])শেয়ার লিংক তৈরি</button></form>
-                                                @endif
-                                            @endunless
-                                            <form method="POST" action="{{ route('admin.drive.trash') }}">@csrf<input type="hidden" name="ids[]" value="{{ $it->id }}"><button class="dng">@include('partials.icon', ['n' => 'trash', 'size' => 18])ট্র্যাশে ফেলুন</button></form>
-                                        @endif
-                                    </div>
-                                </details>
-                            </td>
+                            <td class="td" style="text-align:right">@include('admin.drive.menu')</td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -337,6 +341,7 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
     const sync = () => {
         const n = boxes.filter((b) => b.checked).length;
         bar.classList.toggle('on', n > 0);
+        document.body.classList.toggle('dv-selecting', n > 0);
         $('#sel-count').textContent = n.toLocaleString('bn-BD') + 'টি বাছাই করা';
         if ($('#sel-all')) $('#sel-all').checked = n > 0 && n === boxes.length;
     };

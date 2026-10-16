@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Foundation\Events\DiagnosingHealth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', fn (User $user) => $user->isAdmin());
         // Parts of the panel per role (User::AREAS), e.g. @can('area', 'fees').
         Gate::define('area', fn (User $user, string $area) => $user->canAccess($area));
+
+        // /up (watched by UptimeRobot) also fails when the database is down, not only when PHP is.
+        Event::listen(DiagnosingHealth::class, fn () => DB::select('select 1'));
 
         // Staff password-reset email: Bangla text and our own reset page.
         ResetPassword::createUrlUsing(fn (User $user, string $token) => route('staff.password.reset', ['token' => $token, 'email' => $user->email]));

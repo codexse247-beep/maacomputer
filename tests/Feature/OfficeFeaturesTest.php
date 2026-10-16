@@ -391,6 +391,7 @@ class OfficeFeaturesTest extends TestCase
         $this->get('/?lang=bn')->assertSee('<html lang="bn">', false);
 
         $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8')->assertSee('<loc>'.route('departments').'</loc>', false)->assertSee('hreflang="en"', false);
+        $this->get('/up')->assertOk(); // health check for uptime monitoring (includes the database)
         $this->get('/robots.txt')->assertOk()->assertSee('Disallow: /admin')->assertSee('Sitemap: '.route('sitemap'));
     }
 

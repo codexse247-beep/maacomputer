@@ -86,6 +86,9 @@ class DriveController extends Controller
             'relative' => ['nullable', 'string', 'max:1000'],
             'chunk' => ['present', 'file', 'max:'.(self::CHUNK / 1024 * 2)],
         ], ['size.max' => 'একটি ফাইল ৫ GB-এর বেশি হতে পারবে না।']);
+        // Form fields arrive as text; compare them as numbers.
+        $data['offset'] = (int) $data['offset'];
+        $data['size'] = (int) $data['size'];
 
         $disk = Storage::disk('local');
         $disk->makeDirectory(DriveItem::TMP);

@@ -37,7 +37,8 @@ class DriveTest extends TestCase
         do {
             $part = substr($content, $offset, $piece);
             $response = $this->post('/admin/drive/upload', $extra + [
-                'upload_id' => $id, 'name' => $name, 'size' => strlen($content), 'offset' => $offset,
+                // Text, like a browser's form fields
+                'upload_id' => $id, 'name' => $name, 'size' => (string) strlen($content), 'offset' => (string) $offset,
                 'chunk' => UploadedFile::fake()->createWithContent('piece', $part),
             ], ['Accept' => 'application/json'])->assertOk();
             $offset += strlen($part);

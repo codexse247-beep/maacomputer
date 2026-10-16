@@ -378,7 +378,9 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
             form.append('chunk', piece, 'piece');
             const r = await sendPiece(form, (loaded) => { bar.value = file.size ? (offset + loaded) / file.size * 100 : 100; });
             if (r.json.done) { bar.value = 100; note.textContent = '✓ ' + fmt(file.size); return true; }
-            if ((r.status === 200 || r.status === 409) && typeof r.json.offset === 'number') { offset = r.json.offset; tries = 0; continue; }
+            if (r.status === 200 && typeof r.json.offset === 'number') { offset = r.json.offset; tries = 0; continue; }
+            // Server says "carry on from here": follow it, but give up if it keeps saying so instead of looping forever.
+            if (r.status === 409 && typeof r.json.offset === 'number' && ++tries <= 4) { offset = r.json.offset; continue; }
             if (r.status === 422 || r.status === 413 || r.status === 419 || ++tries > 4) {
                 note.className = 'bad';
                 note.textContent = r.json.message || (r.status === 419 ? 'সেশন শেষ — পাতা রিফ্রেশ করুন' : 'আপলোড হয়নি');

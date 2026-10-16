@@ -30,3 +30,18 @@ Artisan::command('fees:remind', function () {
 })->purpose('Email installment reminders (Settings › ইমেইল › স্বয়ংক্রিয় রিমাইন্ডার)');
 
 \Illuminate\Support\Facades\Schedule::command('fees:remind')->dailyAt('09:00');
+
+// Drive: empty items that have been in the trash for 30 days, and pieces of uploads that never finished.
+Artisan::command('drive:clean', function () {
+    $old = \App\Models\DriveItem::onlyTrashed()->where('deleted_at', '<', now()->subDays(30))->pluck('id')->all();
+    $n = \App\Http\Controllers\Admin\DriveController::deleteForever($old);
+    $disk = \Illuminate\Support\Facades\Storage::disk('local');
+    foreach ($disk->files(\App\Models\DriveItem::TMP) as $file) {
+        if ($disk->lastModified($file) < now()->subDay()->getTimestamp()) {
+            $disk->delete($file);
+        }
+    }
+    $this->info("Removed from trash: $n");
+})->purpose('Empty 30-day-old Drive trash and stale upload pieces');
+
+\Illuminate\Support\Facades\Schedule::command('drive:clean')->dailyAt('03:00');

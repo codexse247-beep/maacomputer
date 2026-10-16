@@ -76,6 +76,9 @@ Route::middleware(['guest:web', SetLocale::class])->prefix('staff')->name('staff
     Route::post('reset-password', [Admin\PasswordResetController::class, 'reset'])->name('update')->middleware('throttle:10,1');
 });
 
+// A Drive file shared with "anyone with the link" (Admin › ড্রাইভ)
+Route::get('d/{token}', [Admin\DriveController::class, 'shared'])->name('drive.shared')->where('token', '[A-Za-z0-9]{32}')->middleware('throttle:60,1');
+
 // Admin panel
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:web')->group(function () {
@@ -223,6 +226,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('gallery', [Admin\GalleryController::class, 'index'])->name('gallery.index');
             Route::post('gallery', [Admin\GalleryController::class, 'store'])->name('gallery.store');
             Route::delete('gallery/{item}', [Admin\GalleryController::class, 'destroy'])->name('gallery.destroy');
+
+            Route::get('drive', [Admin\DriveController::class, 'index'])->name('drive.index');
+            Route::post('drive/folders', [Admin\DriveController::class, 'storeFolder'])->name('drive.folders.store');
+            Route::post('drive/upload', [Admin\DriveController::class, 'upload'])->name('drive.upload');
+            Route::post('drive/move', [Admin\DriveController::class, 'move'])->name('drive.move');
+            Route::post('drive/trash', [Admin\DriveController::class, 'trash'])->name('drive.trash');
+            Route::post('drive/restore', [Admin\DriveController::class, 'restore'])->name('drive.restore');
+            Route::post('drive/zip', [Admin\DriveController::class, 'zipSelected'])->name('drive.zip');
+            Route::delete('drive/forever', [Admin\DriveController::class, 'destroy'])->name('drive.destroy');
+            Route::delete('drive/trash', [Admin\DriveController::class, 'emptyTrash'])->name('drive.empty');
+            Route::get('drive/{item}/download', [Admin\DriveController::class, 'download'])->name('drive.download');
+            Route::get('drive/{item}/open', [Admin\DriveController::class, 'open'])->name('drive.open');
+            Route::put('drive/{item}', [Admin\DriveController::class, 'update'])->name('drive.update');
+            Route::post('drive/{item}/star', [Admin\DriveController::class, 'star'])->name('drive.star');
+            Route::post('drive/{item}/share', [Admin\DriveController::class, 'share'])->name('drive.share');
 
             Route::get('activity', [Admin\ActivityController::class, 'index'])->name('activity.index');
             Route::get('messages', [Admin\MessageController::class, 'index'])->name('messages.index');

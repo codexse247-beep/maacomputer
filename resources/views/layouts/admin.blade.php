@@ -77,6 +77,7 @@
             @can('area', 'notices')<a class="{{ $nav('admin.notices.*') }}" href="{{ route('admin.notices.index') }}">@include('partials.icon', ['n' => 'bell'])নোটিশ</a>@endcan
             @can('area', 'reports')<a class="{{ $nav('admin.reports.*') }}" href="{{ route('admin.reports.index') }}">@include('partials.icon', ['n' => 'chart'])রিপোর্ট</a>@endcan
             @can('admin')
+                <a class="{{ $nav('admin.drive.*') }}" href="{{ route('admin.drive.index') }}">@include('partials.icon', ['n' => 'drive'])ড্রাইভ</a>
                 <a class="{{ $nav('admin.gallery.*') }}" href="{{ route('admin.gallery.index') }}">@include('partials.icon', ['n' => 'image'])গ্যালারি</a>
                 <a class="{{ $nav('admin.messages.*') }}" href="{{ route('admin.messages.index') }}">@include('partials.icon', ['n' => 'mail'])ইমেইল</a>
                 <a class="{{ $nav('admin.activity.*') }}" href="{{ route('admin.activity.index') }}">@include('partials.icon', ['n' => 'file'])অ্যাক্টিভিটি লগ</a>

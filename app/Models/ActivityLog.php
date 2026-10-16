@@ -28,7 +28,7 @@ class ActivityLog extends Model
     public const SUBJECTS = [
         'Student' => 'স্টুডেন্ট', 'Payment' => 'পেমেন্ট', 'Batch' => 'ব্যাচ', 'Department' => 'বিভাগ', 'Teacher' => 'শিক্ষক',
         'Notice' => 'নোটিশ', 'CourseVideo' => 'ক্লাস ভিডিও', 'User' => 'ব্যবহারকারী', 'Expense' => 'খরচ', 'OnlinePayment' => 'অনলাইন পেমেন্ট',
-        'Assignment' => 'অ্যাসাইনমেন্ট', 'Quiz' => 'কুইজ', 'Event' => 'ক্যালেন্ডার', 'Setting' => 'সেটিংস', 'Assessment' => 'ফলাফল',
+        'Assignment' => 'অ্যাসাইনমেন্ট', 'Quiz' => 'কুইজ', 'Event' => 'ক্যালেন্ডার', 'Setting' => 'সেটিংস', 'Assessment' => 'ফলাফল', 'DriveItem' => 'ড্রাইভ',
     ];
 
     /** Never store these values in the log. */

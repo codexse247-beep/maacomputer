@@ -46,6 +46,7 @@ a.dv-name:hover span{text-decoration:underline}
 .dv-menu>summary::-webkit-details-marker{display:none}
 .dv-menu>summary:hover,.dv-menu[open]>summary{background:#EBEFE8}
 .dv-new>summary:hover,.dv-new[open]>summary{background:#0E3A05}
+.dv-rowmenu .dv-pop{position:fixed;right:auto;max-height:calc(100vh - 16px);overflow-y:auto}
 .dv-pop{position:absolute;right:0;top:40px;z-index:30;min-width:210px;background:#fff;border:1px solid #DFE5DB;border-radius:12px;box-shadow:0 10px 30px rgba(14,58,5,.16);padding:6px;display:flex;flex-direction:column}
 .dv-pop a,.dv-pop button{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:0;background:none;border-radius:8px;font:inherit;font-size:14px;font-weight:600;color:#14201A;text-decoration:none;cursor:pointer;text-align:left;width:100%}
 .dv-pop a:hover,.dv-pop button:hover{background:#F1F7EE}
@@ -205,7 +206,7 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
                             <td class="td dv-hide mute" style="white-space:nowrap;font-size:14px">{{ $it->user?->name ?? '—' }}</td>
                             <td class="td mute" style="white-space:nowrap;font-size:14px">{{ $it->is_folder ? '—' : DriveItem::sizeText($it->size) }}</td>
                             <td class="td" style="text-align:right">
-                                <details class="dv-menu">
+                                <details class="dv-menu dv-rowmenu">
                                     <summary aria-label="{{ $it->name }} — আরও">@include('partials.icon', ['n' => 'more', 'size' => 20])</summary>
                                     <div class="dv-pop">
                                         @if ($trash)
@@ -298,6 +299,20 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
     document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
     const closeMenus = (except) => document.querySelectorAll('details.dv-menu[open]').forEach((d) => d !== except && d.removeAttribute('open'));
     document.addEventListener('click', (e) => closeMenus(e.target.closest('details.dv-menu')));
+
+    // Row menus float above the page (the table's scroll box would cut them off) and open upwards near the bottom.
+    document.querySelectorAll('details.dv-rowmenu').forEach((d) => d.addEventListener('toggle', () => {
+        if (!d.open) return;
+        const pop = d.querySelector('.dv-pop'), r = d.querySelector('summary').getBoundingClientRect();
+        pop.style.visibility = 'hidden'; pop.style.top = '0px'; pop.style.left = '0px';
+        const h = pop.offsetHeight, w = pop.offsetWidth, below = window.innerHeight - r.bottom;
+        const top = below >= h + 8 || below >= r.top ? r.bottom + 4 : r.top - h - 4;
+        pop.style.top = Math.max(8, top) + 'px';
+        pop.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
+        pop.style.visibility = '';
+    }));
+    window.addEventListener('scroll', (e) => { if (!e.target.closest?.('.dv-pop')) closeMenus(); }, { passive: true, capture: true });
+    window.addEventListener('resize', () => closeMenus());
 
     document.querySelectorAll('[data-rename]').forEach((b) => b.addEventListener('click', () => {
         closeMenus();

@@ -54,11 +54,8 @@
 <header style="border-bottom:1px solid #DFE5DB;background:#fff">
 <div class="wrap site-head" id="sitehead" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;min-height:88px;padding-top:8px;padding-bottom:8px">
     <a class="brand" href="{{ route('home') }}" style="display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;min-width:0;flex:1 1 0">
-        <img src="{{ logo_url() }}" alt="{{ __(':name-এর লোগো', ['name' => $siteName]) }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none">
-        <span style="display:flex;flex-direction:column;min-width:0">
-            <span style="font-size:clamp(16px,2.2vw,20px);font-weight:700;line-height:1.3;color:#0E3A05">{{ $siteName }}</span>
-            <span class="brand-sub" style="font-size:12px;font-weight:600;color:#55635A">{{ $en ? setting('name') : setting('name_en') }} · {{ setting('domain') }}</span>
-        </span>
+        {{-- Logo only; its alt text gives the link its name (the centre's name → home page). --}}
+        <img src="{{ logo_url() }}" alt="{{ $siteName }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none">
     </a>
     <button type="button" class="btn menu-btn" aria-expanded="false" aria-controls="sitehead" onclick="const h=document.getElementById('sitehead');h.classList.toggle('open');this.setAttribute('aria-expanded',h.classList.contains('open'))">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>{{ __('মেনু') }}

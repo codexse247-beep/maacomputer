@@ -21,6 +21,22 @@ class MessageController extends Controller
         ]);
     }
 
+    /** Shows an email exactly as students receive it, filled with example values. */
+    public function preview(string $event)
+    {
+        abort_unless(array_key_exists($event, Notifier::EVENTS) || $event === 'test', 404);
+        $text = $event === 'test'
+            ? "এটি একটি পরীক্ষামূলক ইমেইল।\nএটি পেলে বুঝবেন ওয়েবসাইট থেকে ইমেইল পাঠানো ঠিকমতো কাজ করছে।\n\n".setting('name')
+            : Notifier::fill(setting('tpl_'.$event), [
+                'center' => setting('name'), 'name' => 'তানভীর আহমেদ', 'id' => 'MCT-2607-004', 'password' => '583920', 'course' => 'গ্রাফিক ডিজাইন',
+                'amount' => bn('2,000'), 'due' => bn('4,000'), 'date' => bn_date(now()->addDays(2)), 'receipt' => 'MR-0042', 'trx' => '9JK7XC2PQA',
+                'reason' => 'বিকাশে টাকা পাওয়া যায়নি', 'title' => 'আগামীকাল ক্লাস বন্ধ', 'body' => 'বৃষ্টির কারণে আগামীকাল সব ক্লাস বন্ধ থাকবে।', 'link' => route('login'),
+            ]);
+        $title = $event === 'test' ? 'পরীক্ষামূলক ইমেইল' : Notifier::EVENTS[$event][1].($event === 'notice' ? ': আগামীকাল ক্লাস বন্ধ' : '');
+
+        return view('emails.message', Notifier::emailData($title, $text, $event));
+    }
+
     public function test(Request $request)
     {
         $data = $request->validate(['to' => ['required', 'email', 'max:255']], [], ['to' => 'ইমেইল']);

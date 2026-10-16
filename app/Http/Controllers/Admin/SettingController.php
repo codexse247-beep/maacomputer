@@ -49,18 +49,24 @@ class SettingController extends Controller
             'rocket_number' => ['nullable', 'regex:/^01[3-9][0-9]{8,9}$/'], 'pay_note' => ['nullable', 'string', 'max:1000'],
             'mail_host' => $text, 'mail_port' => ['nullable', 'integer', 'between:1,65535'], 'mail_username' => ['nullable', 'email', 'max:255'],
             'mail_password' => $text, 'mail_from' => ['nullable', 'email', 'max:255'], 'due_days_before' => ['nullable', 'integer', 'between:0,15'],
+            'google_client_id' => ['nullable', 'string', 'max:255', 'regex:/^[0-9a-z\-]+\.apps\.googleusercontent\.com$/i'], 'google_client_secret' => $text,
             ...collect(Notifier::EVENTS)->keys()->mapWithKeys(fn ($e) => ['tpl_'.$e => ['nullable', 'string', 'max:3000']])->all(),
         ], ['regex' => ':attribute ১১ ডিজিটের মোবাইল নম্বর হতে হবে (01XXXXXXXXX)।'], [
-            'bkash_number' => 'বিকাশ নম্বর', 'nagad_number' => 'নগদ নম্বর', 'rocket_number' => 'রকেট নম্বর', 'mail_username' => 'ইমেইল ঠিকানা', 'mail_from' => 'প্রেরকের ইমেইল',
+            'google_client_id' => 'Client ID', 'bkash_number' => 'বিকাশ নম্বর', 'nagad_number' => 'নগদ নম্বর', 'rocket_number' => 'রকেট নম্বর', 'mail_username' => 'ইমেইল ঠিকানা', 'mail_from' => 'প্রেরকের ইমেইল',
         ]);
         foreach (['mail_enabled', 'due_auto', ...collect(Notifier::EVENTS)->keys()->map(fn ($e) => 'notify_'.$e)] as $flag) {
             if ($request->has($flag)) {
                 $data[$flag] = $request->boolean($flag) ? '1' : '0';
             }
         }
-        // A blank password box keeps the saved one.
-        if (blank($data['mail_password'] ?? null)) {
-            unset($data['mail_password']);
+        // A blank password / secret box keeps the saved one.
+        foreach (['mail_password', 'google_client_secret'] as $secret) {
+            if (blank($data[$secret] ?? null)) {
+                unset($data[$secret]);
+            }
+        }
+        if ($request->boolean('google_remove')) {
+            $data['google_client_id'] = $data['google_client_secret'] = '';
         }
 
         foreach ($data['fees'] ?? [] as $id => $fee) {
@@ -69,7 +75,8 @@ class SettingController extends Controller
         unset($data['fees']);
 
         $old = Setting::values();
-        $data = array_map(fn ($v) => $v ?? '', $data);
+        // Browsers send textarea line breaks as \r\n; store \n so untouched texts don't count as changed.
+        $data = array_map(fn ($v) => str_replace("\r\n", "\n", (string) ($v ?? '')), $data);
         $changed = collect($data)->filter(fn ($v, $k) => (string) ($old[$k] ?? '') !== (string) $v)
             ->map(fn ($v, $k) => in_array($k, Setting::SECRETS, true) ? ['••••', '••••'] : [mb_substr((string) ($old[$k] ?? ''), 0, 80), mb_substr((string) $v, 0, 80)]);
         Setting::put($data);

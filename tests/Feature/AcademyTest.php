@@ -37,7 +37,8 @@ class AcademyTest extends TestCase
         $this->get('/instructors')->assertSee('মো. রফিক হোসেন');
         $this->get('/no-such-page')->assertNotFound()->assertSee('পেজটি খুঁজে পাওয়া যায়নি');
         $this->get('/portal/login')->assertRedirect('/login');
-        $this->get('/admin/login')->assertRedirect('/login');
+        $this->get('/admin/login')->assertOk()->assertSee('অ্যাডমিন লগইন')->assertDontSee('স্টুডেন্ট আইডি');
+        $this->get('/login')->assertOk()->assertSee('স্টুডেন্ট আইডি')->assertDontSee('ড্যাশবোর্ডে প্রবেশ');
     }
 
     public function test_website_forms_reach_the_admin(): void
@@ -73,7 +74,8 @@ class AcademyTest extends TestCase
 
     public function test_guests_are_redirected_to_the_right_login(): void
     {
-        $this->get('/admin')->assertRedirect('/login');
+        $this->get('/admin')->assertRedirect('/admin/login');
+        $this->get('/admin/students')->assertRedirect('/admin/login');
         $this->get('/portal')->assertRedirect('/login');
     }
 
@@ -344,7 +346,7 @@ class AcademyTest extends TestCase
         // A student cannot open someone else's receipt, or the admin panel
         $other = Payment::where('student_id', '!=', $student->id)->first();
         $this->get('/portal/receipts/'.$other->id)->assertNotFound();
-        $this->get('/admin')->assertRedirect('/login');
+        $this->get('/admin')->assertRedirect('/admin/login');
 
         $this->post('/portal/password', ['current_password' => '123456', 'password' => 'newpass1', 'password_confirmation' => 'newpass1'])->assertSessionHas('ok');
         $this->post('/portal/logout')->assertRedirect('/login');

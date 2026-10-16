@@ -52,6 +52,6 @@ class PasswordResetController extends Controller
             return back()->withErrors(['email' => __('লিংকটি আর কাজ করছে না (মেয়াদ শেষ বা ভুল ইমেইল)। আবার "পাসওয়ার্ড ভুলে গেছেন" থেকে লিংক নিন।')])->withInput($request->only('email'));
         }
 
-        return redirect()->route('login')->with('ok', __('পাসওয়ার্ড বদলানো হয়েছে। নতুন পাসওয়ার্ড দিয়ে লগইন করুন।'));
+        return redirect()->route('admin.login')->with('ok', __('পাসওয়ার্ড বদলানো হয়েছে। নতুন পাসওয়ার্ড দিয়ে লগইন করুন।'));
     }
 }

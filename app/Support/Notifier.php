@@ -26,6 +26,33 @@ class Notifier
 
     public const PLACEHOLDERS = '{center} {name} {id} {password} {amount} {due} {date} {receipt} {trx} {reason} {title} {body} {course} {link}';
 
+    /** How each email looks: icon (public/images/email/<icon>.png) and the button [label, route]. */
+    public const LOOK = [
+        'admission' => ['admission', 'পোর্টালে লগইন করুন', 'login'],
+        'payment' => ['payment', 'পোর্টালে রসিদ দেখুন', 'portal.dashboard'],
+        'due' => ['due', 'অনলাইনে ফি দিন', 'portal.pay'],
+        'online_approved' => ['online_approved', 'রসিদ দেখুন', 'portal.dashboard'],
+        'online_rejected' => ['online_rejected', 'পোর্টাল খুলুন', 'portal.pay'],
+        'notice' => ['notice', 'পোর্টালে নোটিশ দেখুন', 'portal.dashboard'],
+        'test' => ['test', 'ওয়েবসাইট দেখুন', 'home'],
+    ];
+
+    /** Data for the branded email view (resources/views/emails/message.blade.php). */
+    public static function emailData(string $title, string $text, ?string $event): array
+    {
+        [$icon, $label, $route] = self::LOOK[$event] ?? ['test', null, null];
+        $paragraphs = preg_split("/\n\s*\n/", trim(str_replace("\r\n", "\n", $text)));
+
+        return [
+            'title' => $title,
+            'icon' => $icon,
+            'body' => $text,
+            'button' => $label ? [$label, route($route)] : null,
+            // Inbox preview: the first line after the greeting.
+            'preheader' => mb_substr(trim(str_replace("\n", ' ', $paragraphs[1] ?? $paragraphs[0] ?? $title)), 0, 110),
+        ];
+    }
+
     /** Email an event's message to a student. Returns false when it can't go (email off, or no address). */
     public static function toStudent(Student $student, string $event, array $vars = []): bool
     {
@@ -72,14 +99,58 @@ class Notifier
         if (! self::configureMail()) {
             return MessageLog::create($log + ['status' => 'skipped', 'response' => 'ইমেইল চালু নেই']);
         }
+        // A personal Gmail account may send to about 500 people a day; stay under it so Google doesn't lock the account.
+        if (self::sentToday() >= self::DAILY_LIMIT) {
+            return MessageLog::create($log + ['status' => 'skipped', 'response' => 'আজকের ইমেইল সীমা ('.self::DAILY_LIMIT.') পূর্ণ — Gmail দিনে প্রায় ৫০০টির বেশি পাঠাতে দেয় না। কাল আবার পাঠান।']);
+        }
 
         try {
-            Mail::raw($text, fn ($m) => $m->to($to)->subject($subject));
+            // The heading inside the email is the subject without the "<centre> — " prefix.
+            $title = str_contains($subject, ' — ') ? \Illuminate\Support\Str::after($subject, ' — ') : $subject;
+            Mail::send(['html' => 'emails.message', 'text' => 'emails.message-text'], self::emailData($title, $text, $event), function ($m) use ($to, $subject) {
+                $m->to($to)->subject($subject);
+                if ($replyTo = self::replyTo()) {
+                    $m->replyTo($replyTo, setting('name_en') ?: setting('name'));
+                }
+                // Gmail/RFC 3834: mark as an automatic message so auto-replies and vacation responders stay quiet.
+                $headers = $m->getSymfonyMessage()->getHeaders();
+                $headers->addTextHeader('Auto-Submitted', 'auto-generated');
+                $headers->addTextHeader('X-Auto-Response-Suppress', 'All');
+            });
 
             return MessageLog::create($log + ['status' => 'sent']);
         } catch (\Throwable $e) {
             return MessageLog::create($log + ['status' => 'failed', 'response' => mb_substr($e->getMessage(), 0, 500)]);
         }
+    }
+
+    /** Gmail's limit for a normal account is 500 recipients per rolling 24 hours; keep a margin. */
+    public const DAILY_LIMIT = 450;
+
+    public static function sentToday(): int
+    {
+        return MessageLog::where('channel', 'email')->where('status', 'sent')->where('created_at', '>=', now()->subDay())->count();
+    }
+
+    /**
+     * Gmail rule: the From address must be the Gmail account that signs in (otherwise Google rewrites it or it fails
+     * SPF/DKIM checks and lands in spam). A different "sender" address from Settings, or the centre's email, becomes Reply-To.
+     */
+    public static function fromAddress(): string
+    {
+        return (string) Setting::values()['mail_username'];
+    }
+
+    public static function replyTo(): ?string
+    {
+        $set = Setting::values();
+        foreach ([$set['mail_from'] ?? '', $set['email'] ?? ''] as $address) {
+            if (filter_var($address, FILTER_VALIDATE_EMAIL) && strcasecmp($address, self::fromAddress()) !== 0) {
+                return $address;
+            }
+        }
+
+        return null;
     }
 
     public static function enabled(): bool
@@ -108,7 +179,7 @@ class Notifier
             'mail.mailers.smtp.scheme' => $port === 465 ? 'smtps' : 'smtp',
             'mail.mailers.smtp.username' => $set['mail_username'],
             'mail.mailers.smtp.password' => $set['mail_password'],
-            'mail.from.address' => $set['mail_from'] ?: $set['mail_username'],
+            'mail.from.address' => self::fromAddress(),
             'mail.from.name' => $set['name_en'] ?: $set['name'],
         ]);
         app('mail.manager')->forgetMailers();

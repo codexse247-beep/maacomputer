@@ -18,6 +18,13 @@
     <span class="badge {{ $enabled ? 'b-g' : 'b-a' }}" style="align-self:center">{{ $enabled ? 'ইমেইল চালু' : 'ইমেইল বন্ধ — সেটিংসে চালু করুন' }}</span>
 </form>
 
+<div class="card" style="padding:18px 24px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <b style="color:#0E3A05;margin-right:6px">ইমেইল দেখতে কেমন:</b>
+    @foreach (\App\Support\Notifier::EVENTS as $key => [$label])
+        <a class="btn sm" href="{{ route('admin.messages.preview', $key) }}" target="_blank">{{ $label }}</a>
+    @endforeach
+</div>
+
 <nav style="display:flex;flex-wrap:wrap;gap:4px;padding:6px;background:#fff;border:1px solid #DFE5DB;border-radius:14px;width:max-content;max-width:100%">
     <a class="tab {{ ! $status ? 'on' : '' }}" href="{{ route('admin.messages.index') }}">সব</a>
     @foreach (\App\Models\MessageLog::STATUSES as $k => [$label])<a class="tab {{ $status === $k ? 'on' : '' }}" href="{{ route('admin.messages.index', ['status' => $k]) }}">{{ $label }}</a>@endforeach

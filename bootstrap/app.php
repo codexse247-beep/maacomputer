@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // The site is only reachable through the local Cloudflare tunnel, so trust its forwarded headers.
         $middleware->trustProxies(at: '*');
         $middleware->web(append: [\App\Http\Middleware\NormalizeDigits::class]);
-        $middleware->redirectGuestsTo(fn () => route('login'));
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin', 'admin/*') ? route('admin.login') : route('login'));
         $middleware->redirectUsersTo(fn (Request $request) => $request->is('portal*') ? route('portal.dashboard') : route('admin.dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {

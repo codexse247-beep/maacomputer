@@ -40,6 +40,9 @@ class Setting extends Model
         'area_en' => 'Baraiyarhat Municipality, Mirsharai, Chattogram', 'address_en' => '', 'hours_en' => '', 'about_intro_en' => '',
         'mission_en' => '', 'vision_en' => '', 'why_us_en' => '', 'privacy_en' => '', 'privacy_date_en' => '',
 
+        // "Log in with Google" (Google Cloud OAuth client); both empty = no Google button
+        'google_client_id' => '', 'google_client_secret' => '',
+
         // Online fee payment (portal) — receiving numbers; a method is offered only when its number is set
         'bkash_number' => '', 'nagad_number' => '', 'rocket_number' => '',
         'pay_note' => 'উপরের নম্বরে "সেন্ড মানি" করুন, তারপর নিচের ফর্মে ট্রানজেকশন আইডি (TrxID) দিন। অফিস যাচাই করলে রসিদ পোর্টালে দেখা যাবে।',
@@ -59,7 +62,7 @@ class Setting extends Model
     ];
 
     /** Settings never written to the activity log in clear, and kept when the form field is left blank. */
-    public const SECRETS = ['mail_password'];
+    public const SECRETS = ['mail_password', 'google_client_secret'];
 
     public static function values(): array
     {

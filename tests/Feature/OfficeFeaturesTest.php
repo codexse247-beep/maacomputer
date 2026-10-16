@@ -394,6 +394,87 @@ class OfficeFeaturesTest extends TestCase
         $this->get('/robots.txt')->assertOk()->assertSee('Disallow: /admin')->assertSee('Sitemap: '.route('sitemap'));
     }
 
+    public function test_emails_follow_gmail_sender_rules(): void
+    {
+        $this->enableEmail();
+        Setting::put(['mail_from' => 'office@maacomputer.org']);
+        config(['mail.from.address' => \App\Support\Notifier::fromAddress()]);
+
+        $log = \App\Support\Notifier::sendEmail('student@example.com', 'মা কম্পিউটার — পেমেন্ট গ্রহণের রসিদ', "প্রিয় তানভীর,\n\nআপনার ৳২,০০০ পেমেন্ট গ্রহণ করা হয়েছে।\nলিংক: https://maacomputer.org/login", null, 'payment');
+        $this->assertSame('sent', $log->status);
+
+        $sent = app('mailer')->getSymfonyTransport()->messages();
+        $email = $sent->last()->getOriginalMessage();
+        $this->assertSame('centre@example.com', $email->getFrom()[0]->getAddress());   // From = the Gmail account
+        $this->assertSame('office@maacomputer.org', $email->getReplyTo()[0]->getAddress()); // other address → Reply-To
+        $this->assertSame('auto-generated', $email->getHeaders()->getHeaderBody('Auto-Submitted'));
+        $this->assertStringContainsString('images/email/payment.png', $email->getHtmlBody());
+        $this->assertStringContainsString('images/logo.png', $email->getHtmlBody());
+        $this->assertStringContainsString('<a href="https://maacomputer.org/login"', $email->getHtmlBody());
+        $this->assertStringContainsString('আপনার ৳২,০০০ পেমেন্ট', $email->getTextBody());          // plain-text copy
+        $this->assertStringNotContainsString('<svg', $email->getHtmlBody());                       // email apps can't show SVG
+        $this->assertLessThan(102 * 1024, strlen($email->getHtmlBody()));                          // Gmail clips bigger emails
+
+        // Daily Gmail limit
+        MessageLog::insert(array_fill(0, \App\Support\Notifier::DAILY_LIMIT, ['channel' => 'email', 'to' => 'x@example.com', 'message' => 'x', 'status' => 'sent', 'created_at' => now(), 'updated_at' => now()]));
+        $this->assertSame('skipped', \App\Support\Notifier::sendEmail('student@example.com', 'x — y', 'z', null, 'payment')->status);
+
+        // Every preview renders
+        $this->actingAs($this->admin, 'web');
+        foreach (array_keys(\App\Support\Notifier::EVENTS) as $event) {
+            $this->get("/admin/messages/preview/$event")->assertOk()->assertSee("images/email/$event.png", false);
+        }
+    }
+
+    public function test_google_login_for_staff_and_students(): void
+    {
+        $fakeGoogle = function (string $email, bool $verified = true) {
+            $user = (new \Laravel\Socialite\Two\User)->map(['email' => $email, 'name' => 'X'])->setRaw(['email' => $email, 'email_verified' => $verified]);
+            $provider = \Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+            $provider->shouldReceive('user')->andReturn($user);
+            $factory = \Mockery::mock(\Laravel\Socialite\Contracts\Factory::class);
+            $factory->shouldReceive('driver')->with('google')->andReturn($provider);
+            $this->app->instance(\Laravel\Socialite\Contracts\Factory::class, $factory);
+            \Laravel\Socialite\Facades\Socialite::clearResolvedInstances();
+        };
+
+        // Off until set up: no button, no route
+        $this->get('/login')->assertDontSee('Google দিয়ে সাইন-ইন করুন');
+        $this->get('/auth/google/student')->assertNotFound();
+
+        $this->actingAs($this->admin, 'web');
+        $this->put('/admin/settings', ['name' => 'মা কম্পিউটার', 'google_client_id' => 'not-a-client-id'])->assertSessionHasErrors('google_client_id');
+        $this->put('/admin/settings', ['name' => 'মা কম্পিউটার', 'google_client_id' => '123-abc.apps.googleusercontent.com', 'google_client_secret' => 'GOCSPX-secret'])->assertSessionHasNoErrors();
+        $this->get('/admin/settings')->assertSee(route('google.callback'));
+        auth('web')->logout();
+        $this->get('/login')->assertSee('Google দিয়ে সাইন-ইন করুন');
+        $this->get('/admin/login')->assertSee(route('google.redirect', 'staff'));
+
+        // Staff: matched by account email (any case)
+        $fakeGoogle('A@Example.com');
+        $this->withSession(['google_login_for' => 'staff'])->get('/auth/google/callback')->assertRedirect('/admin');
+        $this->assertAuthenticatedAs($this->admin, 'web');
+        auth('web')->logout();
+
+        // Unknown staff email is refused
+        $fakeGoogle('stranger@gmail.com');
+        $this->withSession(['google_login_for' => 'staff'])->get('/auth/google/callback')->assertRedirect('/admin/login')->assertSessionHasErrors('email');
+        $this->assertGuest('web');
+
+        // Student: matched by profile email; dropped students and unverified emails are refused
+        $fakeGoogle('tanvir@example.com');
+        $this->withSession(['google_login_for' => 'student'])->get('/auth/google/callback')->assertRedirect('/portal');
+        $this->assertAuthenticatedAs($this->student, 'student');
+        auth('student')->logout();
+
+        $fakeGoogle('tanvir@example.com', verified: false);
+        $this->withSession(['google_login_for' => 'student'])->get('/auth/google/callback')->assertSessionHasErrors('student_code');
+        $this->student->update(['status' => 'dropped']);
+        $fakeGoogle('tanvir@example.com');
+        $this->withSession(['google_login_for' => 'student'])->get('/auth/google/callback')->assertSessionHasErrors('student_code');
+        $this->assertGuest('student');
+    }
+
     public function test_staff_forgot_password_by_email(): void
     {
         Notification::fake();
@@ -412,7 +493,7 @@ class OfficeFeaturesTest extends TestCase
         });
         $this->get("/staff/reset-password/{$token}?email=a@example.com")->assertOk();
         $this->post('/staff/reset-password', ['token' => 'wrong', 'email' => 'a@example.com', 'password' => 'new-pass-123', 'password_confirmation' => 'new-pass-123'])->assertSessionHasErrors('email');
-        $this->post('/staff/reset-password', ['token' => $token, 'email' => 'a@example.com', 'password' => 'new-pass-123', 'password_confirmation' => 'new-pass-123'])->assertRedirect('/login');
+        $this->post('/staff/reset-password', ['token' => $token, 'email' => 'a@example.com', 'password' => 'new-pass-123', 'password_confirmation' => 'new-pass-123'])->assertRedirect('/admin/login');
         $this->post('/admin/login', ['email' => 'a@example.com', 'password' => 'new-pass-123'])->assertRedirect('/admin');
         $this->assertSame('login', ActivityLog::latest('id')->value('action'));
     }

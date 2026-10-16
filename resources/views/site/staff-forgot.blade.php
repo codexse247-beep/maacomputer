@@ -14,7 +14,7 @@
         @unless ($mailOn)<div class="flash err" role="alert">{{ __('ওয়েবসাইটের ইমেইল এখনো চালু হয়নি — প্রধান অ্যাডমিনকে সেটিংস থেকে আপনার পাসওয়ার্ড রিসেট করতে বলুন।') }}</div>@endunless
         <div class="ff"><label for="se">{{ __('ইমেইল') }}</label><input class="in" id="se" name="email" type="email" value="{{ old('email') }}" required autocomplete="username"></div>
         <button class="btn p" type="submit" @disabled(! $mailOn)>{{ __('লিংক পাঠান') }}</button>
-        <a href="{{ route('login') }}" style="font-size:15px">← {{ __('লগইনে ফিরে যান') }}</a>
+        <a href="{{ route('admin.login') }}" style="font-size:15px">← {{ __('লগইনে ফিরে যান') }}</a>
     </form>
 </div>
 </section>

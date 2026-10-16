@@ -91,6 +91,26 @@
         {!! $area('privacy_en', 'Privacy policy and terms ("## " starts a heading)', 8) !!}
     </section>
 
+    <section id="google" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+        <h2 style="margin:0;font-size:20px;color:#0E3A05">Google লগইন <span class="badge {{ \App\Http\Controllers\GoogleLoginController::enabled() ? 'b-g' : 'b-n' }}" style="vertical-align:middle">{{ \App\Http\Controllers\GoogleLoginController::enabled() ? 'চালু' : 'বন্ধ' }}</span></h2>
+        <p class="mute" style="margin:0;line-height:1.7">চালু হলে স্টুডেন্ট ও অ্যাডমিন লগইন পাতায় "Google দিয়ে সাইন-ইন করুন" বোতাম আসবে। শুধু তারাই ঢুকতে পারবে যাদের Gmail কোনো স্টাফ অ্যাকাউন্টের ইমেইল বা স্টুডেন্টের প্রোফাইলের ইমেইলের সাথে মেলে।</p>
+        <div class="ff">
+            <label for="g_redirect">Authorized redirect URI (Google Cloud-এ এটি কপি করে দিন)</label>
+            <input class="in" id="g_redirect" readonly value="{{ route('google.callback') }}" onclick="this.select()" style="font-family:monospace">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:16px">
+            @include('admin.partials.field', $tf('google_client_id', 'Client ID', ['ph' => '1234…apps.googleusercontent.com']))
+            <div class="ff">
+                <label for="set_google_client_secret">Client secret</label>
+                <input class="in" id="set_google_client_secret" type="password" name="google_client_secret" autocomplete="new-password" placeholder="{{ filled($s['google_client_secret']) ? '•••••••• (সংরক্ষিত — বদলাতে নতুনটি লিখুন)' : 'GOCSPX-…' }}">
+                @error('google_client_secret')<span class="errm">{{ $message }}</span>@enderror
+            </div>
+        </div>
+        @if (\App\Http\Controllers\GoogleLoginController::enabled())
+            <label class="sw"><input type="checkbox" name="google_remove" value="1">Google লগইন বন্ধ করুন (Client ID ও secret মুছে যাবে)</label>
+        @endif
+    </section>
+
     <section id="pay" class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
         <h2 style="margin:0;font-size:20px;color:#0E3A05">অনলাইন পেমেন্ট (বিকাশ / নগদ / রকেট)</h2>
         <p class="mute" style="margin:0">যে নম্বর দেবেন, স্টুডেন্ট পোর্টালে সেই মাধ্যমে ফি দেওয়ার অপশন দেখাবে। স্টুডেন্ট ট্রানজেকশন আইডি জমা দেবে, আপনি "অনলাইন পেমেন্ট" পাতায় মিলিয়ে গ্রহণ করবেন। খালি রাখলে বন্ধ থাকবে।</p>
@@ -116,7 +136,7 @@
             </div>
             @include('admin.partials.field', $tf('mail_host', 'SMTP সার্ভার', ['hint' => 'জিমেইল: smtp.gmail.com']))
             @include('admin.partials.field', $tf('mail_port', 'পোর্ট', ['mode' => 'numeric', 'hint' => 'জিমেইল: 587']))
-            @include('admin.partials.field', $tf('mail_from', 'প্রেরকের ইমেইল (ঐচ্ছিক)', ['type' => 'email', 'hint' => 'খালি রাখলে লগইনের ঠিকানাই']))
+            @include('admin.partials.field', $tf('mail_from', 'উত্তর যাবে যে ঠিকানায় (Reply-To, ঐচ্ছিক)', ['type' => 'email', 'hint' => 'Gmail-এর নিয়মে প্রেরক সবসময় ওপরের Gmail-ই থাকবে; স্টুডেন্ট "Reply" করলে উত্তর এই ঠিকানায় যাবে']))
         </div>
 
         <div style="border-top:1px solid #DFE5DB;padding-top:16px;display:flex;flex-direction:column;gap:12px">

@@ -62,6 +62,12 @@ Route::prefix('portal')->name('portal.')->group(function () {
     });
 });
 
+// "Log in with Google" for staff and students
+Route::middleware(SetLocale::class)->controller(\App\Http\Controllers\GoogleLoginController::class)->group(function () {
+    Route::get('auth/google/callback', 'callback')->name('google.callback');
+    Route::get('auth/google/{who}', 'redirect')->whereIn('who', ['staff', 'student'])->name('google.redirect')->middleware('throttle:20,1');
+});
+
 // Staff "forgot password" (email link)
 Route::middleware(['guest:web', SetLocale::class])->prefix('staff')->name('staff.password.')->group(function () {
     Route::get('forgot-password', [Admin\PasswordResetController::class, 'request'])->name('request');
@@ -73,7 +79,7 @@ Route::middleware(['guest:web', SetLocale::class])->prefix('staff')->name('staff
 // Admin panel
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:web')->group(function () {
-        Route::get('login', RedirectController::class)->defaults('destination', '/login')->defaults('status', 302)->name('login');
+        Route::get('login', [Admin\AuthController::class, 'show'])->name('login');
         Route::post('login', [Admin\AuthController::class, 'login'])->name('login.store')->middleware(['throttle:10,1', SetLocale::class]);
     });
 
@@ -221,6 +227,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('activity', [Admin\ActivityController::class, 'index'])->name('activity.index');
             Route::get('messages', [Admin\MessageController::class, 'index'])->name('messages.index');
             Route::post('messages/test', [Admin\MessageController::class, 'test'])->name('messages.test');
+            Route::get('messages/preview/{event}', [Admin\MessageController::class, 'preview'])->name('messages.preview');
         });
     });
 });

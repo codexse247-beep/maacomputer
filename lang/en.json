@@ -230,5 +230,12 @@
     "ল্যাব": "Lab",
     "অনুষ্ঠান": "Event",
     "স্টুডেন্টের কাজ": "Student work",
-    "বিশেষ ক্লাস": "Special class"
+    "বিশেষ ক্লাস": "Special class",
+    "কেন্দ্রের কর্মী? অ্যাডমিন লগইন": "Centre staff? Admin login",
+    "অথবা": "or",
+    "Google লগইন সম্পন্ন হয়নি। আবার চেষ্টা করুন।": "Google login did not finish. Please try again.",
+    "Google অ্যাকাউন্টের ইমেইল যাচাই করা নেই।": "This Google account's email is not verified.",
+    ":email কোনো স্টাফ অ্যাকাউন্টের সাথে যুক্ত নয়। প্রধান অ্যাডমিনকে বলুন সেটিংসে আপনাকে এই ইমেইল দিয়ে যোগ করতে।": ":email is not linked to any staff account. Ask the main admin to add you with this email in Settings.",
+    ":email কোনো স্টুডেন্টের প্রোফাইলে নেই। আইডি ও পাসওয়ার্ড দিয়ে লগইন করে প্রোফাইলে এই ইমেইল দিন, অথবা অফিসে জানান।": ":email is not in any student profile. Log in with your ID and password and add this email to your profile, or tell the office.",
+    "Google দিয়ে সাইন-ইন করুন": "Sign in with Google"
 }

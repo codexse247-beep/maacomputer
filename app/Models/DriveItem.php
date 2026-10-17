@@ -111,6 +111,17 @@ class DriveItem extends Model
         return ! $this->is_folder && in_array($this->mime, self::INLINE, true);
     }
 
+    /** "image" or "video" when the file opens in the lightbox on the drive page, else null. */
+    public function viewer(): ?string
+    {
+        return match (true) {
+            ! $this->canOpen() => null,
+            str_starts_with($this->mime, 'image/') => 'image',
+            str_starts_with($this->mime, 'video/') => 'video',
+            default => null,
+        };
+    }
+
     /** A photo we can make a small preview of (up to 40 MB). */
     public function hasThumb(): bool
     {

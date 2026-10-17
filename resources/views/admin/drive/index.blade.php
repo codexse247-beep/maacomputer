@@ -22,7 +22,9 @@
 @endphp
 
 @push('head')
+<link rel="stylesheet" href="{{ asset('vendor/lity/lity.min.css') }}">
 <style>
+.dv-vbox{width:min(1100px,94vw);background:#000}.dv-vbox video{width:100%;max-height:85vh;display:block}
 .dv{display:flex;gap:24px;align-items:flex-start}
 .dv-side{flex:0 0 230px;display:flex;flex-direction:column;gap:6px;position:sticky;top:16px}
 .dv-side a{display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-radius:99px;text-decoration:none;color:#14201A;font-weight:600;font-size:15px}
@@ -224,7 +226,7 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
                         <tr>
                             <td class="td" style="padding-right:0"><input type="checkbox" name="ids[]" value="{{ $it->id }}" form="bulk" class="sel" aria-label="{{ $it->name }} বাছুন"></td>
                             <td class="td" style="max-width:0;width:60%">
-                                <{{ $href ? 'a' : 'span' }} class="dv-name" @if ($href) href="{{ $href }}" @if (! $it->is_folder) target="_blank" @endif @endif title="{{ $it->name }}">
+                                <{{ $href ? 'a' : 'span' }} class="dv-name" @if ($href) href="{{ $href }}" @if (! $it->is_folder) target="_blank" @endif @if ($it->viewer()) data-view="{{ $it->viewer() }}" @endif @endif title="{{ $it->name }}">
                                     @include('admin.drive.icon')
                                     <span>{{ $it->name }}</span>
                                     @if ($it->starred)@include('partials.icon', ['n' => 'star', 'size' => 15, 'fill' => 'currentColor', 'style' => 'color:#C28A00;flex:none'])@endif
@@ -457,5 +459,24 @@ dialog.dv-dlg .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18
         for (const entry of entries) await walk(entry, '');
     });
 })();
+</script>
+<script src="{{ asset('vendor/lity/jquery.min.js') }}"></script>
+<script src="{{ asset('vendor/lity/lity.min.js') }}"></script>
+<script>
+// Photos and videos open in a lightbox on the page (the link still opens a new tab if the script fails).
+document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-view]');
+    if (! a || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+    e.preventDefault();
+    a.closest('details')?.removeAttribute('open');
+    if (a.dataset.view === 'image') {
+        lity(a.href, { handler: 'image' });
+    } else {
+        const box = jQuery('<div class="dv-vbox"><video controls autoplay playsinline></video></div>');
+        box.find('video').attr('src', a.href);
+        lity(box);
+    }
+});
+jQuery(document).on('lity:close', (e, lity) => { const v = lity.element().find('video')[0]; if (v) { v.pause(); v.removeAttribute('src'); v.load(); } });
 </script>
 @endpush

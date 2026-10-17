@@ -6,7 +6,7 @@
             <form method="POST" action="{{ route('admin.drive.restore') }}">@csrf<input type="hidden" name="ids[]" value="{{ $it->id }}"><button>@include('partials.icon', ['n' => 'restore', 'size' => 18])ফিরিয়ে আনুন</button></form>
             <form method="POST" action="{{ route('admin.drive.destroy') }}" onsubmit="return confirm('চিরতরে মুছে যাবে। নিশ্চিত?')">@csrf @method('DELETE')<input type="hidden" name="ids[]" value="{{ $it->id }}"><button class="dng">@include('partials.icon', ['n' => 'trash', 'size' => 18])চিরতরে মুছুন</button></form>
         @else
-            @if ($it->canOpen())<a href="{{ route('admin.drive.open', $it) }}" target="_blank">@include('partials.icon', ['n' => 'monitor', 'size' => 18])খুলে দেখুন</a>@endif
+            @if ($it->canOpen())<a href="{{ route('admin.drive.open', $it) }}" target="_blank" @if ($it->viewer()) data-view="{{ $it->viewer() }}" @endif>@include('partials.icon', ['n' => 'monitor', 'size' => 18])খুলে দেখুন</a>@endif
             <a href="{{ route('admin.drive.download', $it) }}">@include('partials.icon', ['n' => 'download', 'size' => 18]){{ $it->is_folder ? 'ডাউনলোড (ZIP)' : 'ডাউনলোড' }}</a>
             @if (($q !== '' || $view) && $it->parent_id)
                 <a href="{{ route('admin.drive.index', ['folder' => $it->parent_id]) }}">@include('partials.icon', ['n' => 'folder', 'size' => 18])যে ফোল্ডারে আছে</a>

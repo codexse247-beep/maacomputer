@@ -42,7 +42,7 @@
                     <div class="dv-chead">
                         <input type="checkbox" name="ids[]" value="{{ $it->id }}" form="bulk" class="sel dv-check" aria-label="{{ $it->name }} বাছুন">
                         @include('admin.drive.icon', ['px' => 24, 'noThumb' => true])
-                        @if ($href)<a class="dv-tname dv-stretch" href="{{ $href }}" target="_blank">{{ $it->name }}</a>@else<span class="dv-tname">{{ $it->name }}</span>@endif
+                        @if ($href)<a class="dv-tname dv-stretch" href="{{ $href }}" target="_blank" @if ($it->viewer()) data-view="{{ $it->viewer() }}" @endif>{{ $it->name }}</a>@else<span class="dv-tname">{{ $it->name }}</span>@endif
                         @include('admin.drive.menu')
                     </div>
                     <div class="dv-prev" style="--k:{{ $kindColors[$kind] }}">

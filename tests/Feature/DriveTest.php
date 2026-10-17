@@ -212,6 +212,20 @@ class DriveTest extends TestCase
         $this->get('/admin/drive?view=trash')->assertOk();
     }
 
+    public function test_photos_and_videos_open_in_the_lightbox(): void
+    {
+        $this->uploadInPieces('photo.jpg', $this->jpeg(), 100000);
+        $this->uploadInPieces('notes.txt', 'x', 10);
+        [$photo, $notes] = DriveItem::orderBy('id')->get();
+        $video = DriveItem::create(['name' => 'class.mp4', 'mime' => 'video/mp4', 'size' => 1, 'path' => 'drive/x.mp4', 'user_id' => $this->admin->id]);
+
+        $this->assertSame(['image', null, 'video'], [$photo->viewer(), $notes->viewer(), $video->viewer()]);
+        foreach (['grid', 'list'] as $layout) {
+            $this->get("/admin/drive?layout=$layout")->assertOk()
+                ->assertSee('data-view="image"', false)->assertSee('data-view="video"', false)->assertSee('lity.min.js', false);
+        }
+    }
+
     public function test_photo_previews_are_small_and_upright(): void
     {
         $this->uploadInPieces('phone.jpg', $this->jpeg(6), 100000);
